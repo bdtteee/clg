@@ -9,6 +9,11 @@ declare module "express-session" {
   }
 }
 
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  throw new Error("SESSION_SECRET environment variable is required but was not provided.");
+}
+
 const app: Express = express();
 
 app.use(cors({
@@ -20,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "cardone-loans-secret-2024",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {

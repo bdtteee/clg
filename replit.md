@@ -129,3 +129,14 @@ UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
 - `pnpm run typecheck` – runs `tsc --build --emitDeclarationOnly`
 - `pnpm --filter @workspace/api-spec run codegen` – regenerate API client/zod schemas
 - `pnpm --filter @workspace/db run push` – push schema changes to database
+
+## Replit Configuration
+
+- **Workflow**: `Start application` runs `bash scripts/start-dev.sh`
+- **Frontend**: Vite dev server on `PORT=5000` (webview)
+- **API server**: Express on `API_PORT=3001` (internal)
+- **Proxy**: Vite proxies `/api/*` → `http://127.0.0.1:3001`
+- **BASE_PATH**: `/`
+- **Startup script**: `scripts/start-dev.sh`
+- **Database**: Replit PostgreSQL (DATABASE_URL set as secret)
+- **Session secret**: SESSION_SECRET set as secret (required — no fallback)

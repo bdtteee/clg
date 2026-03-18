@@ -19,16 +19,12 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH;
+const basePath = process.env.BASE_PATH ?? "/";
 
-if (!basePath && !isBuild) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
+const apiPort = Number(process.env.API_PORT || "3001");
 
 export default defineConfig({
-  base: basePath || "/",
+  base: basePath,
   plugins: [
     react(),
     tailwindcss(),
@@ -66,6 +62,12 @@ export default defineConfig({
     fs: {
       strict: true,
       deny: ["**/.*"],
+    },
+    proxy: {
+      "/api": {
+        target: `http://127.0.0.1:${apiPort}`,
+        changeOrigin: true,
+      },
     },
   },
   preview: {
