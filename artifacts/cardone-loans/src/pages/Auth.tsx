@@ -101,7 +101,7 @@ export function Login() {
         setLocation(data.user.role === 'admin' ? '/admin' : '/dashboard')
       },
       onError: (error: any) => {
-        setErrorMsg(error?.response?.data?.error || "Invalid email or password")
+        setErrorMsg(error?.data?.error || error?.message || "Invalid email or password")
       }
     })
   }
@@ -196,7 +196,7 @@ export function Register() {
         setLocation('/dashboard')
       },
       onError: (error: any) => {
-        setErrorMsg(error?.response?.data?.error || "Registration failed. Please try again.")
+        setErrorMsg(error?.data?.error || error?.message || "Registration failed. Please try again.")
       }
     })
   }
