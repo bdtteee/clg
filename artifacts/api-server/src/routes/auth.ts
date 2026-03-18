@@ -3,7 +3,13 @@ import bcrypt from "bcryptjs";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
-import { AuthenticatedRequest } from "../middlewares/auth.js";
+import {
+  AuthenticatedRequest,
+  signToken,
+  setAuthCookie,
+  clearAuthCookie,
+  requireAuth,
+} from "../middlewares/auth.js";
 
 const router = Router();
 
@@ -44,7 +50,8 @@ router.post("/register", async (req: AuthenticatedRequest, res) => {
       })
       .returning();
 
-    req.session!.userId = user.id;
+    const token = signToken(user.id, user.role);
+    setAuthCookie(res, token);
 
     res.status(201).json({
       user: {
@@ -88,7 +95,8 @@ router.post("/login", async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    req.session!.userId = user.id;
+    const token = signToken(user.id, user.role);
+    setAuthCookie(res, token);
 
     res.json({
       user: {
@@ -107,36 +115,34 @@ router.post("/login", async (req: AuthenticatedRequest, res) => {
 });
 
 router.post("/logout", (req: AuthenticatedRequest, res) => {
-  req.session!.destroy(() => {
-    res.json({ message: "Logged out successfully" });
-  });
+  clearAuthCookie(res);
+  res.json({ message: "Logged out successfully" });
 });
 
-router.get("/me", async (req: AuthenticatedRequest, res) => {
-  const userId = req.session?.userId;
-  if (!userId) {
-    res.status(401).json({ error: "Not authenticated" });
-    return;
+router.get("/me", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, req.userId!))
+      .limit(1);
+
+    if (!user) {
+      res.status(401).json({ error: "User not found" });
+      return;
+    }
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("Get me error:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
-
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, userId))
-    .limit(1);
-
-  if (!user) {
-    res.status(401).json({ error: "User not found" });
-    return;
-  }
-
-  res.json({
-    id: user.id,
-    email: user.email,
-    fullName: user.fullName,
-    role: user.role,
-    createdAt: user.createdAt,
-  });
 });
 
 export default router;

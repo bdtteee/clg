@@ -1,8 +1,8 @@
 import { Link, useLocation } from "wouter"
 import { Button } from "@/components/ui/button"
 import { useGetMe, useLogout } from "@workspace/api-client-react"
-import { Building2, Menu, X, Bell } from "lucide-react"
-import { useState } from "react"
+import { Building2, Menu, X, ChevronRight } from "lucide-react"
+import { useState, useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { getGetMeQueryKey } from "@workspace/api-client-react"
 
@@ -12,6 +12,15 @@ export function Navbar() {
   const logoutMutation = useLogout()
   const queryClient = useQueryClient()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  const isHome = location === "/"
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -22,105 +31,124 @@ export function Navbar() {
     })
   }
 
-  const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
-  
   const closeMenu = () => setIsMobileMenuOpen(false)
 
+  const navClass = isHome && !scrolled
+    ? "bg-primary/0 border-white/10"
+    : "bg-background/95 backdrop-blur-md border-border/50 shadow-sm"
+
+  const linkClass = isHome && !scrolled
+    ? "text-white/80 hover:text-white"
+    : "text-muted-foreground hover:text-primary"
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
+    <nav className={`fixed top-0 left-0 right-0 z-50 w-full border-b transition-all duration-300 ${navClass}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
-          {/* Logo */}
           <div className="flex shrink-0 items-center">
-            <Link href="/" onClick={closeMenu} className="flex items-center gap-2 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-                <Building2 className="h-6 w-6" />
+            <Link href="/" onClick={closeMenu} className="flex items-center gap-2.5 group">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-lg group-hover:scale-105 transition-transform ${isHome && !scrolled ? "bg-white/15 text-white" : "bg-primary text-white"}`}>
+                <Building2 className="h-5 w-5" />
               </div>
-              <span className="font-display text-xl font-bold tracking-tight text-primary">
-                Cardone <span className="text-accent">Finance</span>
-              </span>
+              <div className="flex flex-col leading-tight">
+                <span className={`font-display text-[13px] font-extrabold tracking-widest uppercase ${isHome && !scrolled ? "text-white" : "text-primary"}`}>
+                  Cardone
+                </span>
+                <span className={`font-display text-[10px] font-semibold tracking-widest uppercase ${isHome && !scrolled ? "text-accent" : "text-accent-foreground"}`}>
+                  Loans & Grants
+                </span>
+              </div>
             </Link>
           </div>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex md:items-center md:space-x-8">
-            <Link href="/#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">How it works</Link>
-            <Link href="/#products" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Products</Link>
-            <Link href="/#faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">FAQ</Link>
-            
+            <a href="/#how-it-works" className={`text-sm font-medium transition-colors ${linkClass}`}>How it works</a>
+            <a href="/#products" className={`text-sm font-medium transition-colors ${linkClass}`}>Products</a>
+            <a href="/#faq" className={`text-sm font-medium transition-colors ${linkClass}`}>FAQ</a>
+
             {isLoading ? (
-              <div className="h-10 w-24 animate-pulse rounded-xl bg-muted"></div>
+              <div className="h-9 w-24 animate-pulse rounded-lg bg-white/10" />
             ) : user ? (
-              <div className="flex items-center gap-4">
-                <Link href={user.role === 'admin' ? "/admin" : "/dashboard"} className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                  {user.role === 'admin' ? "Admin Panel" : "Dashboard"}
+              <div className="flex items-center gap-3">
+                <Link
+                  href={user.role === 'admin' ? "/admin" : "/dashboard"}
+                  className={`text-sm font-semibold transition-colors ${isHome && !scrolled ? "text-accent hover:text-accent/80" : "text-primary hover:text-primary/80"}`}
+                >
+                  {user.role === 'admin' ? "Admin Panel" : "My Dashboard"}
                 </Link>
-                <Button variant="outline" onClick={handleLogout} className="border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className={isHome && !scrolled ? "border-white/30 text-white hover:bg-white/10 hover:text-white bg-transparent" : ""}
+                >
                   Log out
                 </Button>
-                <Link href="/apply" className="inline-block">
-                  <Button variant="accent">Apply Now</Button>
+                <Link href="/apply">
+                  <Button size="sm" variant="accent" className="text-primary font-bold">
+                    Apply Now
+                  </Button>
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center gap-4">
-                <Link href="/login" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className={`text-sm font-medium transition-colors ${linkClass}`}
+                >
                   Log in
                 </Link>
-                <Link href="/register" className="inline-block">
-                  <Button>Get Started</Button>
+                <Link href="/register">
+                  <Button
+                    size="sm"
+                    className={isHome && !scrolled
+                      ? "bg-accent text-primary hover:bg-accent/90 font-bold shadow-lg shadow-accent/20"
+                      : "font-bold"
+                    }
+                  >
+                    Get Started <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
-            <button
-              onClick={toggleMenu}
-              className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none"
-            >
-              <span className="sr-only">Open main menu</span>
-              {isMobileMenuOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`flex items-center justify-center rounded-lg p-2 md:hidden ${isHome && !scrolled ? "text-white hover:bg-white/10" : "text-foreground hover:bg-muted"}`}
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden glass border-b border-border absolute w-full left-0 top-20 shadow-xl">
-          <div className="space-y-1 px-4 pb-6 pt-2">
-            <Link href="/#how-it-works" onClick={closeMenu} className="block rounded-lg px-3 py-2 text-base font-medium text-foreground hover:bg-muted">How it works</Link>
-            <Link href="/#products" onClick={closeMenu} className="block rounded-lg px-3 py-2 text-base font-medium text-foreground hover:bg-muted">Products</Link>
-            <Link href="/#faq" onClick={closeMenu} className="block rounded-lg px-3 py-2 text-base font-medium text-foreground hover:bg-muted">FAQ</Link>
-            
-            <div className="mt-4 pt-4 border-t border-border">
+        <div className="md:hidden bg-background border-b border-border shadow-xl">
+          <div className="space-y-1 px-4 pb-6 pt-4">
+            <a href="/#how-it-works" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">How it works</a>
+            <a href="/#products" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Products</a>
+            <a href="/#faq" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">FAQ</a>
+
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
               {user ? (
-                <div className="flex flex-col gap-3">
-                  <Link href={user.role === 'admin' ? "/admin" : "/dashboard"} onClick={closeMenu} className="block rounded-lg px-3 py-2 text-base font-medium text-primary hover:bg-muted">
-                    {user.role === 'admin' ? "Admin Panel" : "Dashboard"}
+                <>
+                  <Link href={user.role === 'admin' ? "/admin" : "/dashboard"} onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-semibold text-primary hover:bg-muted">
+                    {user.role === 'admin' ? "Admin Panel" : "My Dashboard"}
                   </Link>
-                  <Button variant="outline" className="w-full justify-center" onClick={() => { handleLogout(); closeMenu(); }}>
-                    Log out
-                  </Button>
-                  <Link href="/apply" onClick={closeMenu} className="block w-full">
-                    <Button variant="accent" className="w-full">Apply Now</Button>
+                  <Button variant="outline" className="w-full" onClick={() => { handleLogout(); closeMenu() }}>Log out</Button>
+                  <Link href="/apply" onClick={closeMenu}>
+                    <Button variant="accent" className="w-full text-primary font-bold">Apply Now</Button>
                   </Link>
-                </div>
+                </>
               ) : (
-                <div className="flex flex-col gap-3">
-                  <Link href="/login" onClick={closeMenu} className="block">
+                <>
+                  <Link href="/login" onClick={closeMenu}>
                     <Button variant="outline" className="w-full">Log in</Button>
                   </Link>
-                  <Link href="/register" onClick={closeMenu} className="block">
-                    <Button className="w-full">Get Started</Button>
+                  <Link href="/register" onClick={closeMenu}>
+                    <Button className="w-full font-bold">Get Started</Button>
                   </Link>
-                </div>
+                </>
               )}
             </div>
           </div>
