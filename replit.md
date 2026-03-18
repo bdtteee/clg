@@ -1,8 +1,12 @@
-# Workspace
+# Cardone Loans & Grants
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Full-stack fintech platform connecting Kenyan individuals and businesses with U.S.-based funding providers. Acts as an intermediary for loans and grants with KYC onboarding, application processing, M-Pesa payment integration, and admin management.
+
+**Domain:** cardoneloansgrants.org  
+**Support:** info@cardoneloansgrants.org | +1 254-528-9454  
+**Address:** 17325 Castellammare Dr, Pacific Palisades, CA 90272
 
 ## Stack
 
@@ -10,87 +14,118 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
+- **Frontend**: React + Vite, Tailwind CSS, Wouter (routing), React Query, Framer Motion
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
+- **Auth**: express-session + bcryptjs (cookie-based sessions)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+
+## Design System
+
+- Primary: Deep Navy Blue (#0B1F3A)
+- Secondary: Emerald Green (#1FA67A)
+- Accent: Gold (#D4AF37)
+- Background: Light Gray (#F5F7FA)
+- Text: Dark Gray (#1A1A1A)
+
+## Products
+
+| Product | Range | Processing Fee |
+|---|---|---|
+| Personal Grant | $2,000 – $10,000 | $10 |
+| Business Grant | $5,000 – $30,000 | $20 |
+| Personal Loan | $10,000 – $50,000 | $20 |
+| Business Loan | $20,000 – $100,000 | $50 |
+
+**Loan Pre-approval Logic:** Loans automatically show 65% pre-approval of requested amount immediately after submission.
+
+## M-Pesa Payment
+
+Business Number: 4167853 (Paybill)  
+Account Number: Application ID
 
 ## Structure
 
 ```text
 artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
+├── artifacts/
+│   ├── api-server/         # Express 5 API (auth, applications, notifications, admin)
+│   └── cardone-loans/      # React + Vite frontend (served at /)
+├── lib/
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+├── pnpm-workspace.yaml
+├── tsconfig.base.json
+├── tsconfig.json
+└── package.json
 ```
+
+## Database Schema (Drizzle ORM / PostgreSQL)
+
+- **users** – id, email, password_hash, full_name, role (user/admin), created_at
+- **applications** – id, user_id, type (loan/grant), category (personal/business), amount_requested, preapproved_amount, status (pending/under_review/approved/rejected), payment_code, form fields..., admin_comment, created_at, updated_at
+- **notifications** – id, user_id, message, read, created_at
+- **admin_actions** – id, application_id, admin_id, action (approved/rejected/reviewed), reason, timestamp
+
+## API Routes
+
+- `POST /api/auth/register` – Register new user
+- `POST /api/auth/login` – Login
+- `POST /api/auth/logout` – Logout
+- `GET /api/auth/me` – Get current user
+- `GET /api/applications` – Get user's applications
+- `POST /api/applications` – Create application (loan → 65% preapproval auto-set)
+- `GET /api/applications/:id` – Get single application
+- `POST /api/applications/:id/payment` – Submit M-Pesa payment code
+- `GET /api/notifications` – Get notifications
+- `POST /api/notifications/:id/read` – Mark notification read
+- `POST /api/notifications/read-all` – Mark all read
+- `GET /api/admin/applications` – Admin: list all (filterable by type/status)
+- `POST /api/admin/applications/:id/approve` – Admin: approve + notify user
+- `POST /api/admin/applications/:id/reject` – Admin: reject + notify user
+- `GET /api/admin/stats` – Admin: dashboard statistics
+
+## Frontend Pages
+
+- `/` – Landing (hero, how it works, products, trust badges, FAQ, disclaimer, footer)
+- `/login` – Login
+- `/register` – Register
+- `/dashboard` – User dashboard (applications list, notifications)
+- `/apply` – Multi-step application form (product selection → form → M-Pesa payment → success)
+- `/applications/:id` – Application detail
+- `/admin` – Admin dashboard (stats, recent applications)
+- `/admin/applications/:id` – Admin application detail (approve/reject)
+
+## User Roles
+
+- **user** – Can apply, view own applications, receive notifications
+- **admin** – Can view all applications, approve/reject, send notifications
+
+## Creating Admin User
+
+To create an admin, register normally then update the role in the database:
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
+```
+
+## Timelines
+
+- Approval: 2–3 business days
+- Disbursement: 14 days after approval
 
 ## TypeScript & Composite Projects
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
-
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+- `lib/*` packages are composite, emit declarations via `tsc --build`
+- `artifacts/*` are leaf packages checked with `tsc --noEmit`
+- Root `tsconfig.json` is a solution file for libs only
 
 ## Root Scripts
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
-
-## Packages
-
-### `artifacts/api-server` (`@workspace/api-server`)
-
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
-
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
-
-### `lib/db` (`@workspace/db`)
-
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
-
-### `lib/api-spec` (`@workspace/api-spec`)
-
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+- `pnpm run build` – runs `typecheck` first, then recursively runs `build`
+- `pnpm run typecheck` – runs `tsc --build --emitDeclarationOnly`
+- `pnpm --filter @workspace/api-spec run codegen` – regenerate API client/zod schemas
+- `pnpm --filter @workspace/db run push` – push schema changes to database
