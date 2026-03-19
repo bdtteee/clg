@@ -6,10 +6,12 @@ export interface AuthenticatedRequest extends Request {
   userRole?: string;
 }
 
-const jwtSecret = process.env.SESSION_SECRET;
+const jwtSecret =
+  process.env.SUPABASE_JWT_SECRET || process.env.SESSION_SECRET;
 
 export function signToken(userId: number, userRole: string): string {
-  if (!jwtSecret) throw new Error("SESSION_SECRET is required");
+  if (!jwtSecret)
+    throw new Error("No JWT secret found. Set SUPABASE_JWT_SECRET or SESSION_SECRET.");
   return jwt.sign({ userId, userRole }, jwtSecret, { expiresIn: "7d" });
 }
 
@@ -38,7 +40,9 @@ export function requireAuth(
   next: NextFunction
 ): void {
   if (!jwtSecret) {
-    res.status(500).json({ error: "Server misconfiguration: SESSION_SECRET missing" });
+    res
+      .status(500)
+      .json({ error: "Server misconfiguration: JWT secret missing" });
     return;
   }
 
@@ -57,7 +61,9 @@ export function requireAuth(
     req.userRole = decoded.userRole;
     next();
   } catch {
-    res.status(401).json({ error: "Invalid or expired session. Please log in again." });
+    res
+      .status(401)
+      .json({ error: "Invalid or expired session. Please log in again." });
   }
 }
 

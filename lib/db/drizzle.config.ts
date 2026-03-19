@@ -1,14 +1,22 @@
 import { defineConfig } from "drizzle-kit";
 import path from "path";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
+const migrationUrl =
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_URL;
+
+if (!migrationUrl) {
+  throw new Error(
+    "No database URL found. Set POSTGRES_URL_NON_POOLING (Supabase) or DATABASE_URL.",
+  );
 }
 
 export default defineConfig({
   schema: path.join(__dirname, "./src/schema/index.ts"),
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: migrationUrl,
+    ssl: !!(process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL),
   },
 });

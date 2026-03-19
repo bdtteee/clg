@@ -138,5 +138,26 @@ UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
 - **Proxy**: Vite proxies `/api/*` → `http://127.0.0.1:3001`
 - **BASE_PATH**: `/`
 - **Startup script**: `scripts/start-dev.sh`
-- **Database**: Replit PostgreSQL (DATABASE_URL set as secret)
-- **Session secret**: SESSION_SECRET set as secret (required — no fallback)
+- **Database (local)**: Replit PostgreSQL (DATABASE_URL set as secret)
+- **Session secret**: SESSION_SECRET set as secret (fallback if SUPABASE_JWT_SECRET not set)
+
+## Supabase / Vercel Integration
+
+The project is deployed on **Vercel** and connected to a **Supabase** PostgreSQL database via the Vercel-Supabase integration. Vercel automatically injects the following environment variables:
+
+| Variable | Usage |
+|---|---|
+| `POSTGRES_URL` | Pooled connection string — used by the app at runtime (`lib/db/src/index.ts`) |
+| `POSTGRES_URL_NON_POOLING` | Direct connection — used by Drizzle Kit for migrations (`drizzle.config.ts`) |
+| `SUPABASE_JWT_SECRET` | JWT signing secret — used by the auth middleware (falls back to `SESSION_SECRET`) |
+| `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase admin key |
+| `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DATABASE` | Individual PG credentials |
+
+**DB connection priority**: `POSTGRES_URL` → `DATABASE_URL`  
+**Migration URL priority**: `POSTGRES_URL_NON_POOLING` → `POSTGRES_URL` → `DATABASE_URL`  
+**JWT secret priority**: `SUPABASE_JWT_SECRET` → `SESSION_SECRET`  
+**SSL**: Enabled automatically when `POSTGRES_URL` is present (required by Supabase).
+
+To push schema to Supabase: `pnpm --filter @workspace/db run push` (with `POSTGRES_URL_NON_POOLING` set)
