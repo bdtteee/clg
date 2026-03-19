@@ -1,4 +1,4 @@
-import { useGetMe } from "@workspace/api-client-react"
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react"
 import { useLocation } from "wouter"
 import { useEffect } from "react"
 import { Loader2 } from "lucide-react"
@@ -11,6 +11,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const { data: user, isLoading, error } = useGetMe({
     query: {
+      queryKey: getGetMeQueryKey(),
       retry: false
     }
   })

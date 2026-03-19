@@ -59,7 +59,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
       if (isNaN(id)) {
         res.status(400).json({ error: "Invalid application ID" });
         return;
@@ -120,7 +120,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
       if (isNaN(id)) {
         res.status(400).json({ error: "Invalid application ID" });
         return;

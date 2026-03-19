@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useRoute, Link, useLocation } from "wouter"
-import { useGetApplication, useApproveApplication, useRejectApplication, getAdminGetStatsQueryKey } from "@workspace/api-client-react"
+import { useGetApplication, useApproveApplication, useRejectApplication, getAdminGetStatsQueryKey, getGetApplicationQueryKey } from "@workspace/api-client-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,7 @@ export function AdminApplicationDetail() {
   const [reason, setReason] = useState("")
   const [showActionForm, setShowActionForm] = useState<'approve'|'reject'|null>(null)
 
-  const { data: app, isLoading, refetch } = useGetApplication(id, { query: { enabled: !!id } })
+  const { data: app, isLoading, refetch } = useGetApplication(id, { query: { queryKey: getGetApplicationQueryKey(id), enabled: !!id } })
   const approveMut = useApproveApplication()
   const rejectMut = useRejectApplication()
 
@@ -64,7 +64,7 @@ export function AdminApplicationDetail() {
             <Button variant="destructive" onClick={() => setShowActionForm('reject')}>
               <XCircle className="mr-2 h-4 w-4" /> Reject
             </Button>
-            <Button variant="success" onClick={() => setShowActionForm('approve')} className="bg-success text-white hover:bg-success/90">
+            <Button onClick={() => setShowActionForm('approve')} className="bg-success text-white hover:bg-success/90">
               <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
             </Button>
           </div>

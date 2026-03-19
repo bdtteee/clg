@@ -87,7 +87,7 @@ export function Login() {
   const loginMutation = useLogin()
   const queryClient = useQueryClient()
 
-  const { data: user } = useGetMe({ query: { retry: false } })
+  const { data: user } = useGetMe({ query: { queryKey: getGetMeQueryKey(), retry: false } })
   if (user) {
     setLocation(user.role === 'admin' ? '/admin' : '/dashboard')
   }

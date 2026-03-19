@@ -105,7 +105,7 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
 
 router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: "Invalid application ID" });
       return;
@@ -142,7 +142,7 @@ router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
 
 router.post("/:id/payment", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: "Invalid application ID" });
       return;
