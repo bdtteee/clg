@@ -1,8 +1,8 @@
 import { Link, useLocation } from "wouter"
 import { Button } from "@/components/ui/button"
 import { useGetMe, useLogout } from "@workspace/api-client-react"
-import { Building2, Menu, X, ChevronRight } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Building2, Menu, X, ChevronRight, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { getGetMeQueryKey } from "@workspace/api-client-react"
 
@@ -13,11 +13,23 @@ export function Navbar() {
   const queryClient = useQueryClient()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [productsOpen, setProductsOpen] = useState(false)
+  const productsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (productsRef.current && !productsRef.current.contains(e.target as Node)) {
+        setProductsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
   }, [])
 
   const isHome = location === "/"
@@ -61,10 +73,34 @@ export function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden md:flex md:items-center md:space-x-8">
-            <a href="/#how-it-works" className={`text-sm font-medium transition-colors ${linkClass}`}>How it works</a>
-            <a href="/#products" className={`text-sm font-medium transition-colors ${linkClass}`}>Products</a>
-            <a href="/#faq" className={`text-sm font-medium transition-colors ${linkClass}`}>FAQ</a>
+          <div className="hidden md:flex md:items-center md:space-x-7">
+            <Link href="/about" className={`text-sm font-medium transition-colors ${linkClass}`}>About</Link>
+
+            {/* Products Dropdown */}
+            <div className="relative" ref={productsRef}>
+              <button
+                onClick={() => setProductsOpen(!productsOpen)}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors ${linkClass}`}
+              >
+                Products <ChevronDown className={`h-3.5 w-3.5 transition-transform ${productsOpen ? "rotate-180" : ""}`} />
+              </button>
+              {productsOpen && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-52 bg-white border border-border rounded-2xl shadow-xl p-2 z-50">
+                  <Link href="/loans" onClick={() => setProductsOpen(false)} className="block px-4 py-3 rounded-xl hover:bg-muted text-sm font-medium text-foreground transition-colors">
+                    💼 Loans
+                    <span className="block text-xs text-muted-foreground font-normal mt-0.5">$10K – $100K USD</span>
+                  </Link>
+                  <Link href="/grants" onClick={() => setProductsOpen(false)} className="block px-4 py-3 rounded-xl hover:bg-muted text-sm font-medium text-foreground transition-colors">
+                    🎁 Grants
+                    <span className="block text-xs text-muted-foreground font-normal mt-0.5">$2K – $30K USD · Non-repayable</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            <Link href="/how-it-works" className={`text-sm font-medium transition-colors ${linkClass}`}>How It Works</Link>
+            <Link href="/faq" className={`text-sm font-medium transition-colors ${linkClass}`}>FAQ</Link>
+            <Link href="/contact" className={`text-sm font-medium transition-colors ${linkClass}`}>Contact</Link>
 
             {isLoading ? (
               <div className="h-9 w-24 animate-pulse rounded-lg bg-white/10" />
@@ -125,9 +161,12 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-background border-b border-border shadow-xl">
           <div className="space-y-1 px-4 pb-6 pt-4">
-            <a href="/#how-it-works" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">How it works</a>
-            <a href="/#products" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Products</a>
-            <a href="/#faq" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">FAQ</a>
+            <Link href="/about" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">About Us</Link>
+            <Link href="/loans" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Loans ($10K–$100K)</Link>
+            <Link href="/grants" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Grants ($2K–$30K)</Link>
+            <Link href="/how-it-works" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">How It Works</Link>
+            <Link href="/faq" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">FAQ</Link>
+            <Link href="/contact" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Contact</Link>
 
             <div className="mt-4 pt-4 border-t border-border space-y-3">
               {user ? (
