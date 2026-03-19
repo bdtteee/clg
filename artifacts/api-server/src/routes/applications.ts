@@ -39,20 +39,20 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
       category,
       amountRequested,
       fullName,
-      nationalId,
+      email,
       phoneNumber,
+      country,
+      reason,
+      nationalIdNumber,
       employmentStatus,
       monthlyIncome,
-      purposeOfFunds,
       businessName,
       registrationNumber,
       kraPin,
-      businessType,
       annualRevenue,
-      ownerDetails,
     } = req.body;
 
-    if (!type || !category || !amountRequested || !purposeOfFunds) {
+    if (!type || !category || !amountRequested || !reason || !fullName || !email || !phoneNumber) {
       res.status(400).json({ error: "Missing required fields" });
       return;
     }
@@ -66,21 +66,21 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
         userId: req.userId!,
         type,
         category,
+        fullName,
+        email,
+        phoneNumber,
+        country: country || "Kenya",
+        reason,
         amountRequested: parseFloat(amountRequested).toFixed(2),
         preapprovedAmount,
         status: "pending",
-        fullName,
-        nationalId,
-        phoneNumber,
+        nationalIdNumber,
         employmentStatus,
         monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome).toFixed(2) : null,
-        purposeOfFunds,
         businessName,
         registrationNumber,
         kraPin,
-        businessType,
         annualRevenue: annualRevenue ? parseFloat(annualRevenue).toFixed(2) : null,
-        ownerDetails,
       })
       .returning();
 
