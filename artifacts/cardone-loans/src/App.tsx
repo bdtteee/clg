@@ -17,6 +17,7 @@ import { UserDashboard } from "@/pages/Dashboard";
 import { ApplicationDetail } from "@/pages/ApplicationDetail";
 import { AdminDashboard } from "@/pages/AdminDashboard";
 import { AdminApplicationDetail } from "@/pages/AdminApplicationDetail";
+import { AdminPayments } from "@/pages/AdminPayments";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +73,13 @@ function Router() {
             {() => (
               <ProtectedRoute requireAdmin>
                 <AdminApplicationDetail />
+              </ProtectedRoute>
+            )}
+          </Route>
+          <Route path="/admin/payments">
+            {() => (
+              <ProtectedRoute requireAdmin>
+                <AdminPayments />
               </ProtectedRoute>
             )}
           </Route>

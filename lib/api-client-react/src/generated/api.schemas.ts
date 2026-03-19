@@ -156,6 +156,37 @@ export interface AdminActionRequest {
   reason: string;
 }
 
+export type AdminUpdateApplicationRequestStatus =
+  (typeof AdminUpdateApplicationRequestStatus)[keyof typeof AdminUpdateApplicationRequestStatus];
+
+export const AdminUpdateApplicationRequestStatus = {
+  pending: "pending",
+  under_review: "under_review",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export interface AdminUpdateApplicationRequest {
+  status?: AdminUpdateApplicationRequestStatus;
+  approvedAmount?: number | null;
+  assignedPartner?: string | null;
+  disbursementDate?: string | null;
+  adminComment?: string | null;
+}
+
+export interface ManualPayment {
+  id: number;
+  userId: number;
+  applicationId?: number | null;
+  userName: string;
+  phoneNumber: string;
+  mpesaConfirmationCode: string;
+  amountKes: number;
+  isVerified: boolean;
+  verifiedBy?: number | null;
+  createdAt: string;
+}
+
 export interface AdminStats {
   totalApplications: number;
   pendingApplications: number;

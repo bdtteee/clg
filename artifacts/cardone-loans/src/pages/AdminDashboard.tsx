@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { Link } from "wouter"
 import { format } from "date-fns"
-import { Loader2, Users, FileText, DollarSign, Activity, CheckCircle, Clock, XCircle } from "lucide-react"
+import { Loader2, Users, FileText, DollarSign, Activity, CheckCircle, Clock, XCircle, CreditCard } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export function AdminDashboard() {
@@ -24,9 +24,16 @@ export function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold">Admin Portal</h1>
-        <p className="text-muted-foreground">Overview of all platform activity and underwriting queue.</p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold">Admin Portal</h1>
+          <p className="text-muted-foreground">Overview of all platform activity and underwriting queue.</p>
+        </div>
+        <Link href="/admin/payments">
+          <Button variant="outline" className="gap-2">
+            <CreditCard className="h-4 w-4" /> Manage Payments
+          </Button>
+        </Link>
       </div>
 
       {/* KPI Cards */}

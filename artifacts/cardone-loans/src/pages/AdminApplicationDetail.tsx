@@ -1,28 +1,64 @@
 import { useState } from "react"
 import { useRoute, Link, useLocation } from "wouter"
-import { useGetApplication, useApproveApplication, useRejectApplication, getAdminGetStatsQueryKey, getGetApplicationQueryKey } from "@workspace/api-client-react"
+import {
+  useGetApplication,
+  useApproveApplication,
+  useRejectApplication,
+  useAdminUpdateApplication,
+  getAdminGetStatsQueryKey,
+  getGetApplicationQueryKey,
+} from "@workspace/api-client-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { format } from "date-fns"
-import { Loader2, ArrowLeft, CheckCircle2, XCircle } from "lucide-react"
+import { Loader2, ArrowLeft, CheckCircle2, XCircle, Save, Edit2 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@/hooks/use-toast"
 
 export function AdminApplicationDetail() {
   const [, params] = useRoute("/admin/applications/:id")
   const id = Number(params?.id)
   const [, setLocation] = useLocation()
   const queryClient = useQueryClient()
-  
-  const [reason, setReason] = useState("")
-  const [showActionForm, setShowActionForm] = useState<'approve'|'reject'|null>(null)
+  const { toast } = useToast()
 
-  const { data: app, isLoading, refetch } = useGetApplication(id, { query: { queryKey: getGetApplicationQueryKey(id), enabled: !!id } })
+  const [reason, setReason] = useState("")
+  const [showActionForm, setShowActionForm] = useState<'approve' | 'reject' | null>(null)
+
+  const [editMode, setEditMode] = useState(false)
+  const [editFields, setEditFields] = useState({
+    assignedPartner: "",
+    approvedAmount: "",
+    disbursementDate: "",
+    adminComment: "",
+  })
+
+  const { data: app, isLoading, refetch } = useGetApplication(id, {
+    query: {
+      queryKey: getGetApplicationQueryKey(id),
+      enabled: !!id,
+      onSuccess: (data: any) => {
+        setEditFields({
+          assignedPartner: data.assignedPartner || "",
+          approvedAmount: data.approvedAmount ? String(data.approvedAmount) : "",
+          disbursementDate: data.disbursementDate || "",
+          adminComment: data.adminComment || "",
+        })
+      },
+    }
+  })
+
   const approveMut = useApproveApplication()
   const rejectMut = useRejectApplication()
+  const updateMut = useAdminUpdateApplication()
 
-  if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+  if (isLoading) return (
+    <div className="flex h-[50vh] items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  )
   if (!app) return <div className="p-12 text-center">Application not found</div>
 
   const handleAction = (type: 'approve' | 'reject') => {
@@ -35,6 +71,32 @@ export function AdminApplicationDetail() {
         queryClient.invalidateQueries({ queryKey: getAdminGetStatsQueryKey() })
         refetch()
         setShowActionForm(null)
+        toast({ title: `Application ${type === 'approve' ? 'approved' : 'rejected'} successfully` })
+      }
+    })
+  }
+
+  const handleUpdate = () => {
+    const payload: Record<string, unknown> = {}
+    if (editFields.assignedPartner !== (app.assignedPartner || "")) payload.assignedPartner = editFields.assignedPartner || null
+    if (editFields.approvedAmount !== (app.approvedAmount ? String(app.approvedAmount) : ""))
+      payload.approvedAmount = editFields.approvedAmount ? parseFloat(editFields.approvedAmount) : null
+    if (editFields.disbursementDate !== (app.disbursementDate || "")) payload.disbursementDate = editFields.disbursementDate || null
+    if (editFields.adminComment !== (app.adminComment || "")) payload.adminComment = editFields.adminComment || null
+
+    if (Object.keys(payload).length === 0) {
+      setEditMode(false)
+      return
+    }
+
+    updateMut.mutate({ id, data: payload as any }, {
+      onSuccess: () => {
+        refetch()
+        setEditMode(false)
+        toast({ title: "Application updated successfully" })
+      },
+      onError: () => {
+        toast({ title: "Update failed", variant: "destructive" })
       }
     })
   }
@@ -58,17 +120,29 @@ export function AdminApplicationDetail() {
           <p className="text-muted-foreground">Submitted {format(new Date(app.createdAt), 'PPpp')}</p>
         </div>
 
-        {/* Action Buttons */}
-        {(app.status === 'pending' || app.status === 'under_review') && !showActionForm && (
-          <div className="flex gap-3">
-            <Button variant="destructive" onClick={() => setShowActionForm('reject')}>
-              <XCircle className="mr-2 h-4 w-4" /> Reject
-            </Button>
-            <Button onClick={() => setShowActionForm('approve')} className="bg-success text-white hover:bg-success/90">
-              <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-3 flex-wrap">
+          {(app.status === 'pending' || app.status === 'under_review') && !showActionForm && (
+            <>
+              <Button variant="destructive" onClick={() => setShowActionForm('reject')}>
+                <XCircle className="mr-2 h-4 w-4" /> Reject
+              </Button>
+              <Button onClick={() => setShowActionForm('approve')} className="bg-success text-white hover:bg-success/90">
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
+              </Button>
+            </>
+          )}
+          <Button variant="outline" onClick={() => {
+            setEditFields({
+              assignedPartner: (app as any).assignedPartner || "",
+              approvedAmount: app.approvedAmount ? String(app.approvedAmount) : "",
+              disbursementDate: (app as any).disbursementDate || "",
+              adminComment: app.adminComment || "",
+            })
+            setEditMode(true)
+          }}>
+            <Edit2 className="mr-2 h-4 w-4" /> Edit Details
+          </Button>
+        </div>
       </div>
 
       {showActionForm && (
@@ -80,7 +154,7 @@ export function AdminApplicationDetail() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium block mb-2">Reason / Note to Client (Required)</label>
-                <textarea 
+                <textarea
                   className="w-full min-h-[100px] rounded-xl border border-border bg-white px-4 py-2"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -89,8 +163,8 @@ export function AdminApplicationDetail() {
               </div>
               <div className="flex gap-3 justify-end">
                 <Button variant="ghost" onClick={() => setShowActionForm(null)}>Cancel</Button>
-                <Button 
-                  variant={showActionForm === 'approve' ? 'default' : 'destructive'} 
+                <Button
+                  variant={showActionForm === 'approve' ? 'default' : 'destructive'}
                   className={showActionForm === 'approve' ? 'bg-success hover:bg-success/90' : ''}
                   onClick={() => handleAction(showActionForm)}
                   disabled={isPending || !reason.trim()}
@@ -99,6 +173,64 @@ export function AdminApplicationDetail() {
                   Confirm {showActionForm === 'approve' ? 'Approval' : 'Rejection'}
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {editMode && (
+        <Card className="mb-8 border-2 border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Edit Application Details</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium block mb-1">Assigned Partner / Lender</label>
+                <input
+                  type="text"
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm"
+                  value={editFields.assignedPartner}
+                  onChange={(e) => setEditFields(f => ({ ...f, assignedPartner: e.target.value }))}
+                  placeholder="e.g. KCB Bank, Equity Bank"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Approved Amount (USD)</label>
+                <input
+                  type="number"
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm"
+                  value={editFields.approvedAmount}
+                  onChange={(e) => setEditFields(f => ({ ...f, approvedAmount: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Disbursement Date</label>
+                <input
+                  type="date"
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm"
+                  value={editFields.disbursementDate}
+                  onChange={(e) => setEditFields(f => ({ ...f, disbursementDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Admin Comment (visible to user)</label>
+                <input
+                  type="text"
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm"
+                  value={editFields.adminComment}
+                  onChange={(e) => setEditFields(f => ({ ...f, adminComment: e.target.value }))}
+                  placeholder="Notes visible to the applicant..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="ghost" onClick={() => setEditMode(false)}>Cancel</Button>
+              <Button onClick={handleUpdate} disabled={updateMut.isPending}>
+                {updateMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Changes
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -114,10 +246,13 @@ export function AdminApplicationDetail() {
               <tbody className="divide-y divide-border">
                 <tr className="bg-background"><td className="px-6 py-4 font-medium text-muted-foreground w-1/3">Type</td><td className="px-6 py-4 font-bold capitalize">{app.category} {app.type}</td></tr>
                 <tr className="bg-muted/10"><td className="px-6 py-4 font-medium text-muted-foreground">Requested Amount</td><td className="px-6 py-4 font-display font-bold text-xl text-primary">{formatCurrency(app.amountRequested)}</td></tr>
+                {app.approvedAmount && (
+                  <tr className="bg-success/5"><td className="px-6 py-4 font-medium text-muted-foreground">Approved Amount</td><td className="px-6 py-4 font-display font-bold text-xl text-success">{formatCurrency(app.approvedAmount)}</td></tr>
+                )}
                 <tr className="bg-background"><td className="px-6 py-4 font-medium text-muted-foreground">Name/Business</td><td className="px-6 py-4">{app.fullName || app.businessName}</td></tr>
-                <tr className="bg-muted/10"><td className="px-6 py-4 font-medium text-muted-foreground">ID/Registration</td><td className="px-6 py-4">{app.nationalId || app.registrationNumber}</td></tr>
+                <tr className="bg-muted/10"><td className="px-6 py-4 font-medium text-muted-foreground">ID/Registration</td><td className="px-6 py-4">{(app as any).nationalId || app.registrationNumber}</td></tr>
                 <tr className="bg-background"><td className="px-6 py-4 font-medium text-muted-foreground">Phone</td><td className="px-6 py-4">{app.phoneNumber}</td></tr>
-                
+
                 {app.category === 'personal' ? (
                   <>
                     <tr className="bg-muted/10"><td className="px-6 py-4 font-medium text-muted-foreground">Employment</td><td className="px-6 py-4">{app.employmentStatus}</td></tr>
@@ -126,7 +261,14 @@ export function AdminApplicationDetail() {
                 ) : (
                   <tr className="bg-muted/10"><td className="px-6 py-4 font-medium text-muted-foreground">Annual Revenue</td><td className="px-6 py-4">{app.annualRevenue ? formatCurrency(app.annualRevenue) : '-'}</td></tr>
                 )}
-                
+
+                {(app as any).assignedPartner && (
+                  <tr className="bg-accent/5"><td className="px-6 py-4 font-medium text-muted-foreground">Assigned Partner</td><td className="px-6 py-4 font-semibold text-accent-foreground">{(app as any).assignedPartner}</td></tr>
+                )}
+                {(app as any).disbursementDate && (
+                  <tr className="bg-muted/10"><td className="px-6 py-4 font-medium text-muted-foreground">Disbursement Date</td><td className="px-6 py-4">{(app as any).disbursementDate}</td></tr>
+                )}
+
                 <tr className="bg-background">
                   <td className="px-6 py-4 font-medium text-muted-foreground align-top">Purpose</td>
                   <td className="px-6 py-4 leading-relaxed">{app.purposeOfFunds}</td>

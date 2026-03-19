@@ -381,6 +381,95 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /admin/applications/{id}/update:
+    patch:
+      operationId: adminUpdateApplication
+      tags: [admin]
+      summary: Admin - update application details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateApplicationRequest"
+      responses:
+        "200":
+          description: Application updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/payments:
+    get:
+      operationId: adminGetPayments
+      tags: [admin]
+      summary: Admin - get all manual payments
+      responses:
+        "200":
+          description: All manual payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManualPayment"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/payments/{id}/verify:
+    post:
+      operationId: adminVerifyPayment
+      tags: [admin]
+      summary: Admin - verify a manual payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualPayment"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /admin/stats:
     get:
       operationId: adminGetStats
@@ -656,6 +745,61 @@ components:
           type: string
       required:
         - reason
+
+    AdminUpdateApplicationRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, under_review, approved, rejected]
+        approvedAmount:
+          type: number
+          nullable: true
+        assignedPartner:
+          type: string
+          nullable: true
+        disbursementDate:
+          type: string
+          nullable: true
+        adminComment:
+          type: string
+          nullable: true
+
+    ManualPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        applicationId:
+          type: integer
+          nullable: true
+        userName:
+          type: string
+        phoneNumber:
+          type: string
+        mpesaConfirmationCode:
+          type: string
+        amountKes:
+          type: number
+        isVerified:
+          type: boolean
+        verifiedBy:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - userName
+        - phoneNumber
+        - mpesaConfirmationCode
+        - amountKes
+        - isVerified
+        - createdAt
 
     AdminStats:
       type: object

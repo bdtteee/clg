@@ -338,6 +338,86 @@ export const RejectApplicationResponse = zod.object({
 });
 
 /**
+ * @summary Admin - update application details
+ */
+export const AdminUpdateApplicationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateApplicationBody = zod.object({
+  status: zod
+    .enum(["pending", "under_review", "approved", "rejected"])
+    .optional(),
+  approvedAmount: zod.number().nullish(),
+  assignedPartner: zod.string().nullish(),
+  disbursementDate: zod.string().nullish(),
+  adminComment: zod.string().nullish(),
+});
+
+export const AdminUpdateApplicationResponse = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  type: zod.enum(["loan", "grant"]),
+  category: zod.enum(["personal", "business"]),
+  amountRequested: zod.number(),
+  preapprovedAmount: zod.number().nullish(),
+  status: zod.enum(["pending", "under_review", "approved", "rejected"]),
+  paymentCode: zod.string().nullish(),
+  fullName: zod.string().nullish(),
+  nationalId: zod.string().nullish(),
+  phoneNumber: zod.string().nullish(),
+  employmentStatus: zod.string().nullish(),
+  monthlyIncome: zod.number().nullish(),
+  purposeOfFunds: zod.string().nullish(),
+  businessName: zod.string().nullish(),
+  registrationNumber: zod.string().nullish(),
+  kraPin: zod.string().nullish(),
+  businessType: zod.string().nullish(),
+  annualRevenue: zod.number().nullish(),
+  ownerDetails: zod.string().nullish(),
+  adminComment: zod.string().nullish(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Admin - get all manual payments
+ */
+export const AdminGetPaymentsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  applicationId: zod.number().nullish(),
+  userName: zod.string(),
+  phoneNumber: zod.string(),
+  mpesaConfirmationCode: zod.string(),
+  amountKes: zod.number(),
+  isVerified: zod.boolean(),
+  verifiedBy: zod.number().nullish(),
+  createdAt: zod.date(),
+});
+export const AdminGetPaymentsResponse = zod.array(AdminGetPaymentsResponseItem);
+
+/**
+ * @summary Admin - verify a manual payment
+ */
+export const AdminVerifyPaymentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminVerifyPaymentResponse = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  applicationId: zod.number().nullish(),
+  userName: zod.string(),
+  phoneNumber: zod.string(),
+  mpesaConfirmationCode: zod.string(),
+  amountKes: zod.number(),
+  isVerified: zod.boolean(),
+  verifiedBy: zod.number().nullish(),
+  createdAt: zod.date(),
+});
+
+/**
  * @summary Admin - get dashboard statistics
  */
 export const AdminGetStatsResponse = zod.object({

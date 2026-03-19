@@ -1,0 +1,246 @@
+You are building a production-ready web app using Next.js (App Router) deployed on Vercel.
+
+PROJECT CONTEXT:
+- Frontend is already hosted on Vercel
+- Backend is Supabase (database + auth already configured)
+- Database schema already exists (DO NOT MODIFY schema)
+- We are connecting frontend to existing Supabase project
+
+SUPABASE CONFIG:
+SUPABASE_URL = https://wefoetwzntvrqmpndwlx.supabase.co
+SUPABASE_ANON_KEY = (use provided)
+Use ONLY public anon key on frontend
+DO NOT expose service role key
+
+GOAL:
+Make the frontend fully functional with:
+1. Login for existing users (Supabase Auth)
+2. Fetch and display user profile data
+3. Full dashboard for users
+4. Admin panel with full CRUD + actions
+
+-----------------------------------
+
+STEP 1: SETUP SUPABASE CLIENT
+
+Create /lib/supabaseClient.ts:
+
+- Use @supabase/supabase-js
+- Use NEXT_PUBLIC_SUPABASE_URL
+- Use NEXT_PUBLIC_SUPABASE_ANON_KEY
+- Export a reusable client
+
+-----------------------------------
+
+STEP 2: AUTHENTICATION (LOGIN)
+
+Create:
+- /app/login/page.tsx
+
+Features:
+- Email + Password login
+- Use supabase.auth.signInWithPassword
+- Redirect to /dashboard after login
+- Show proper error handling
+
+IMPORTANT:
+Users already exist in auth.users table → DO NOT create new users unless signing up
+
+-----------------------------------
+
+STEP 3: SESSION HANDLING
+
+- Persist session using supabase.auth.getSession()
+- Protect routes:
+  - /dashboard
+  - /applications
+  - /admin
+
+If no session → redirect to /login
+
+-----------------------------------
+
+STEP 4: USER PROFILE FETCH
+
+After login:
+- Fetch from table: user_profiles
+- Match: user_profiles.id = auth.user.id
+
+Display:
+- full_name
+- email
+- phone_number
+- country
+- kyc_status
+
+-----------------------------------
+
+STEP 5: USER DASHBOARD
+
+Route: /dashboard
+
+Display:
+- User profile summary
+- Applications list (from applications table where user_id = current user)
+
+Query:
+supabase
+.from('applications')
+.select('*')
+.eq('user_id', user.id)
+
+-----------------------------------
+
+STEP 6: APPLICATION MANAGEMENT
+
+Allow user to:
+- View all their applications
+- See:
+  - status
+  - amount_requested
+  - approved_amount
+  - submission_date
+
+-----------------------------------
+
+STEP 7: ADMIN PANEL
+
+Route: /admin
+
+IMPORTANT:
+- Only allow access if user is admin (you can temporarily hardcode admin emails)
+
+ADMIN FEATURES:
+
+1. VIEW ALL APPLICATIONS
+- Table view of applications
+- Show:
+  full_name, email, amount_requested, status
+
+2. UPDATE APPLICATION STATUS
+- Pending → Approved / Rejected / Verified
+- Update:
+supabase.from('applications').update({...}).eq('id', application_id)
+
+3. ASSIGN PARTNER
+- Update assigned_partner field
+
+4. LOG ACTIONS
+Insert into:
+admin_actions_log:
+- admin_id
+- application_id
+- action_type
+- details (JSON)
+
+5. VIEW PAYMENTS
+- Fetch from payments table
+- Show status + amount
+
+6. VERIFY MANUAL PAYMENTS
+- Update manual_payments.is_verified = true
+
+-----------------------------------
+
+STEP 8: NOTIFICATIONS
+
+When admin updates application:
+- Insert into notifications table:
+  user_id
+  message
+  application_id
+
+-----------------------------------
+
+STEP 9: UI REQUIREMENTS
+
+- Clean dashboard UI (similar to fintech apps)
+- Sidebar navigation:
+  Dashboard
+  Applications
+  Payments
+  Admin (if admin)
+
+-----------------------------------
+
+STEP 10: SECURITY
+
+- Use Row Level Security (assume policies exist)
+- Never expose service_role_key in frontend
+- Use anon key only
+
+-----------------------------------
+
+STEP 11: DEPLOYMENT
+
+Ensure:
+- All env variables use NEXT_PUBLIC_
+- Works on Vercel without modification
+
+-----------------------------------
+
+FINAL DELIVERABLE:
+- Fully working login
+- Existing users can log in
+- Dashboard pulls real Supabase data
+- Admin panel can manage applications, payments, logs
+-----------------------------------
+
+STEP 12: LIVE DOMAIN + ROUTING (CRITICAL)
+
+The app is deployed on Vercel with custom domain:
+https://cardoneloansgrants.org
+
+You MUST ensure the following routes exist and work in production:
+
+1. PUBLIC ROUTES
+- https://cardoneloansgrants.org/login
+- https://cardoneloansgrants.org/dashboard
+
+2. ADMIN ROUTE
+- https://cardoneloansgrants.org/admin
+
+-----------------------------------
+
+ADMIN ACCESS RULES:
+
+- Only authenticated users can access /admin
+- Add a simple admin check:
+  - Allow access ONLY if user's email matches a predefined admin email list
+  - Example:
+    const ADMIN_EMAILS = ['admin@cardoneloansgrants.org']
+
+- If NOT admin:
+  → redirect to /dashboard
+
+-----------------------------------
+
+ADMIN PANEL REQUIREMENTS:
+
+The /admin page MUST:
+
+1. Display ALL applications from Supabase
+2. Allow updating:
+   - status
+   - approved_amount
+   - assigned_partner
+
+3. Allow verifying manual payments
+4. Insert logs into admin_actions_log
+5. Create notifications when actions are taken
+
+-----------------------------------
+
+NAVIGATION:
+
+- Add visible "Admin Panel" link in sidebar ONLY for admins
+- Ensure navigation works on live domain
+
+-----------------------------------
+
+FINAL REQUIREMENT:
+
+All routes MUST be accessible via:
+https://cardoneloansgrants.org
+
+Do NOT use localhost in any redirects or links.

@@ -20,6 +20,7 @@ import type {
   AdminActionRequest,
   AdminGetApplicationsParams,
   AdminStats,
+  AdminUpdateApplicationRequest,
   Application,
   ApplicationWithUser,
   AuthResponse,
@@ -27,6 +28,7 @@ import type {
   ErrorResponse,
   HealthStatus,
   LoginRequest,
+  ManualPayment,
   MessageResponse,
   Notification,
   PaymentRequest,
@@ -1284,6 +1286,253 @@ export const useRejectApplication = <
   TContext
 > => {
   return useMutation(getRejectApplicationMutationOptions(options));
+};
+
+/**
+ * @summary Admin - update application details
+ */
+export const getAdminUpdateApplicationUrl = (id: number) => {
+  return `/api/admin/applications/${id}/update`;
+};
+
+export const adminUpdateApplication = async (
+  id: number,
+  adminUpdateApplicationRequest: AdminUpdateApplicationRequest,
+  options?: RequestInit,
+): Promise<Application> => {
+  return customFetch<Application>(getAdminUpdateApplicationUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateApplicationRequest),
+  });
+};
+
+export const getAdminUpdateApplicationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateApplication>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateApplicationRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateApplication>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateApplicationRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateApplication"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateApplication>>,
+    { id: number; data: BodyType<AdminUpdateApplicationRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateApplication(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateApplicationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateApplication>>
+>;
+export type AdminUpdateApplicationMutationBody =
+  BodyType<AdminUpdateApplicationRequest>;
+export type AdminUpdateApplicationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Admin - update application details
+ */
+export const useAdminUpdateApplication = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateApplication>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateApplicationRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateApplication>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateApplicationRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateApplicationMutationOptions(options));
+};
+
+/**
+ * @summary Admin - get all manual payments
+ */
+export const getAdminGetPaymentsUrl = () => {
+  return `/api/admin/payments`;
+};
+
+export const adminGetPayments = async (
+  options?: RequestInit,
+): Promise<ManualPayment[]> => {
+  return customFetch<ManualPayment[]>(getAdminGetPaymentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetPaymentsQueryKey = () => {
+  return [`/api/admin/payments`] as const;
+};
+
+export const getAdminGetPaymentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetPayments>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetPayments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetPaymentsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetPayments>>
+  > = ({ signal }) => adminGetPayments({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetPayments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetPaymentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetPayments>>
+>;
+export type AdminGetPaymentsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Admin - get all manual payments
+ */
+
+export function useAdminGetPayments<
+  TData = Awaited<ReturnType<typeof adminGetPayments>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetPayments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetPaymentsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Admin - verify a manual payment
+ */
+export const getAdminVerifyPaymentUrl = (id: number) => {
+  return `/api/admin/payments/${id}/verify`;
+};
+
+export const adminVerifyPayment = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ManualPayment> => {
+  return customFetch<ManualPayment>(getAdminVerifyPaymentUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminVerifyPaymentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminVerifyPayment>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminVerifyPayment>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminVerifyPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminVerifyPayment>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminVerifyPayment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminVerifyPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminVerifyPayment>>
+>;
+
+export type AdminVerifyPaymentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Admin - verify a manual payment
+ */
+export const useAdminVerifyPayment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminVerifyPayment>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminVerifyPayment>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminVerifyPaymentMutationOptions(options));
 };
 
 /**

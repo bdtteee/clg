@@ -87,6 +87,9 @@ artifacts-monorepo/
 - `GET /api/admin/applications` – Admin: list all (filterable by type/status)
 - `POST /api/admin/applications/:id/approve` – Admin: approve + notify user
 - `POST /api/admin/applications/:id/reject` – Admin: reject + notify user
+- `PATCH /api/admin/applications/:id/update` – Admin: update assignedPartner, approvedAmount, disbursementDate, adminComment, status
+- `GET /api/admin/payments` – Admin: list all manual payments
+- `POST /api/admin/payments/:id/verify` – Admin: verify M-Pesa payment (moves app to under_review, notifies user)
 - `GET /api/admin/stats` – Admin: dashboard statistics
 
 ## Frontend Pages
@@ -97,8 +100,9 @@ artifacts-monorepo/
 - `/dashboard` – User dashboard (applications list, notifications)
 - `/apply` – Multi-step application form (product selection → form → M-Pesa payment → success)
 - `/applications/:id` – Application detail
-- `/admin` – Admin dashboard (stats, recent applications)
-- `/admin/applications/:id` – Admin application detail (approve/reject)
+- `/admin` – Admin dashboard (stats, recent applications, payments link)
+- `/admin/applications/:id` – Admin application detail (approve/reject, assign partner, set approved amount, disbursement date)
+- `/admin/payments` – Admin payments management (view all M-Pesa payments, verify pending payments)
 
 ## User Roles
 
