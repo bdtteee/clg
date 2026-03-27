@@ -20,6 +20,9 @@ import FAQ from "@/pages/FAQ";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import { Login, Register } from "@/pages/Auth";
+import { AdminLogin } from "@/pages/AdminLogin";
+import { ConfirmEmail } from "@/pages/ConfirmEmail";
+import { ResetPassword } from "@/pages/ResetPassword";
 import { Apply } from "@/pages/Apply";
 import { UserDashboard } from "@/pages/Dashboard";
 import { ApplicationDetail } from "@/pages/ApplicationDetail";
@@ -36,75 +39,90 @@ const queryClient = new QueryClient({
   },
 });
 
+// Pages that use their own full-screen layout (no Navbar/Footer)
+const FULL_SCREEN_PATHS = ["/login", "/register", "/admin-login", "/confirm-email", "/reset-password"];
+
 function Router() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/about" component={About} />
-          <Route path="/loans" component={Loans} />
-          <Route path="/grants" component={Grants} />
-          <Route path="/how-it-works" component={HowItWorks} />
-          <Route path="/contact" component={Contact} />
-          <Route path="/faq" component={FAQ} />
-          <Route path="/terms" component={Terms} />
-          <Route path="/privacy" component={Privacy} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          
-          {/* Protected User Routes */}
-          <Route path="/apply">
-            {() => (
-              <ProtectedRoute>
-                <Apply />
-              </ProtectedRoute>
-            )}
-          </Route>
-          <Route path="/dashboard">
-            {() => (
-              <ProtectedRoute>
-                <UserDashboard />
-              </ProtectedRoute>
-            )}
-          </Route>
-          <Route path="/applications/:id">
-            {() => (
-              <ProtectedRoute>
-                <ApplicationDetail />
-              </ProtectedRoute>
-            )}
-          </Route>
+    <Switch>
+      {/* Full-screen auth/info pages (no Navbar/Footer) */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/confirm-email" component={ConfirmEmail} />
+      <Route path="/reset-password" component={ResetPassword} />
 
-          {/* Protected Admin Routes */}
-          <Route path="/admin">
-            {() => (
-              <ProtectedRoute requireAdmin>
-                <AdminDashboard />
-              </ProtectedRoute>
-            )}
-          </Route>
-          <Route path="/admin/applications/:id">
-            {() => (
-              <ProtectedRoute requireAdmin>
-                <AdminApplicationDetail />
-              </ProtectedRoute>
-            )}
-          </Route>
-          <Route path="/admin/payments">
-            {() => (
-              <ProtectedRoute requireAdmin>
-                <AdminPayments />
-              </ProtectedRoute>
-            )}
-          </Route>
+      {/* Standard pages with Navbar + Footer */}
+      <Route>
+        {() => (
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <main className="flex-grow">
+              <Switch>
+                <Route path="/" component={Home} />
+                <Route path="/about" component={About} />
+                <Route path="/loans" component={Loans} />
+                <Route path="/grants" component={Grants} />
+                <Route path="/how-it-works" component={HowItWorks} />
+                <Route path="/contact" component={Contact} />
+                <Route path="/faq" component={FAQ} />
+                <Route path="/terms" component={Terms} />
+                <Route path="/privacy" component={Privacy} />
 
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      <Footer />
-    </div>
+                {/* Protected User Routes */}
+                <Route path="/apply">
+                  {() => (
+                    <ProtectedRoute>
+                      <Apply />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/dashboard">
+                  {() => (
+                    <ProtectedRoute>
+                      <UserDashboard />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/applications/:id">
+                  {() => (
+                    <ProtectedRoute>
+                      <ApplicationDetail />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+
+                {/* Protected Admin Routes */}
+                <Route path="/admin">
+                  {() => (
+                    <ProtectedRoute requireAdmin>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/admin/applications/:id">
+                  {() => (
+                    <ProtectedRoute requireAdmin>
+                      <AdminApplicationDetail />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/admin/payments">
+                  {() => (
+                    <ProtectedRoute requireAdmin>
+                      <AdminPayments />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+
+                <Route component={NotFound} />
+              </Switch>
+            </main>
+            <Footer />
+          </div>
+        )}
+      </Route>
+    </Switch>
   );
 }
 

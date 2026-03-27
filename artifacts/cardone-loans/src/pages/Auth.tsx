@@ -166,12 +166,17 @@ export function Login() {
           </Button>
         </form>
 
-        <p className="text-center mt-6 text-sm text-muted-foreground">
-          Don't have an account?{" "}
-          <Link href="/register" className="text-primary font-semibold hover:underline">
-            Create one free
+        <div className="flex flex-col gap-3 mt-6 text-center text-sm text-muted-foreground">
+          <Link href="/reset-password" className="text-primary font-semibold hover:underline">
+            Forgot your password?
           </Link>
-        </p>
+          <span>
+            Don't have an account?{" "}
+            <Link href="/register" className="text-primary font-semibold hover:underline">
+              Create one free
+            </Link>
+          </span>
+        </div>
       </div>
     </AuthShell>
   )
