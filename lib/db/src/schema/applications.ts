@@ -106,10 +106,11 @@ export const paymentsTable = pgTable("payments", {
 export const kycDocumentsTable = pgTable("kyc_documents", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  applicationId: integer("application_id").references(() => applicationsTable.id),
   documentType: text("document_type").notNull(),
   fileUrl: text("file_url"),
   filePath: text("file_path"),
-  status: text("status").notNull().default("Not Uploaded"),
+  status: text("status").notNull().default("Pending"),
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
