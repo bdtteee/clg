@@ -2,6 +2,7 @@ import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { useSEO } from "@/hooks/useSEO"
 import {
   User, DollarSign, Smartphone, TrendingUp, CheckCircle2, ArrowRight,
   Clock, ShieldCheck, Globe, Zap, FileText, Handshake, BadgeCheck
@@ -87,6 +88,12 @@ const steps = [
 ]
 
 export default function HowItWorks() {
+  useSEO({
+    title: "How It Works — Apply for a Loan or Grant in Kenya | Cardone Loans & Grants",
+    description: "See exactly how to apply for a U.S.-backed loan or grant in Kenya. 4 simple steps: choose your product, submit online, pay via M-Pesa Paybill 4167853, receive USD funding. Decisions in 2–3 days.",
+    canonical: "/how-it-works",
+    keywords: "how to apply loan Kenya, how to apply grant Kenya, loan application process Kenya, M-Pesa loan process, Kenya US loan steps, get loan USD Kenya",
+  })
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
 

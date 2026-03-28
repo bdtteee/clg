@@ -1,0 +1,87 @@
+User-agent: *
+Allow: /
+
+# Disallow private/auth pages
+Disallow: /admin
+Disallow: /admin/
+Disallow: /admin-login
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /apply
+Disallow: /apply/
+Disallow: /applications/
+Disallow: /login
+Disallow: /register
+Disallow: /confirm-email
+Disallow: /reset-password
+Disallow: /api/
+
+# Allow all public marketing pages
+Allow: /
+Allow: /about
+Allow: /loans
+Allow: /grants
+Allow: /how-it-works
+Allow: /faq
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+# Sitemap
+Sitemap: https://cardoneloansgrants.com/sitemap.xml
+
+# Major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: facebot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+# AI crawlers (for AI search / ChatGPT / Perplexity / Bing AI)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: Applebot
+Allow: /

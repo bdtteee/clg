@@ -1,6 +1,7 @@
 import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { FileText } from "lucide-react"
+import { useSEO } from "@/hooks/useSEO"
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }
 
@@ -119,6 +120,12 @@ Phone: +1 254-528-9454`
 ]
 
 export default function Terms() {
+  useSEO({
+    title: "Terms & Conditions | Cardone Loans & Grants",
+    description: "Read the Terms and Conditions governing your use of Cardone Loans & Grants services, loan and grant applications, M-Pesa fee payments, and disbursements.",
+    canonical: "/terms",
+    keywords: "Cardone loans terms, loan terms Kenya, grant terms conditions Kenya",
+  })
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
       <section className="relative pt-32 pb-16 bg-primary overflow-hidden">

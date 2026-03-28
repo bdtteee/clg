@@ -2,6 +2,7 @@ import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useSEO } from "@/hooks/useSEO"
 import {
   CheckCircle2, ArrowRight, User, Briefcase, DollarSign, Clock,
   ShieldCheck, Smartphone, TrendingUp, HelpCircle, ChevronDown, AlertCircle
@@ -61,6 +62,12 @@ const faqs = [
 ]
 
 export default function Loans() {
+  useSEO({
+    title: "Personal & Business Loans in Kenya — $10,000 to $100,000 USD | Cardone Loans & Grants",
+    description: "Apply for personal loans ($10,000–$50,000 USD) or business loans ($20,000–$100,000 USD) in Kenya. 65% instant pre-approval. No collateral. Pay via M-Pesa Paybill 4167853. 2–3 day decisions.",
+    canonical: "/loans",
+    keywords: "personal loans Kenya, business loans Kenya, USD loans Kenya, no collateral loan Kenya, M-Pesa loan Kenya, instant loan approval Kenya, US business loan Kenya",
+  })
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (

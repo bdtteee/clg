@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useSEO } from "@/hooks/useSEO"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Link } from "wouter"
@@ -35,6 +36,12 @@ function AnimatedCounter({ end, duration = 2, prefix = "", suffix = "" }: {
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }
 
 export default function Home() {
+  useSEO({
+    title: "Cardone Loans & Grants | U.S. Funding for Kenyans — $2,000 to $100,000 USD",
+    description: "Apply for personal or business loans and grants from $2,000 to $100,000 USD. Kenyan individuals and businesses connect directly with U.S. funding partners. 2–3 day decisions. Pay via M-Pesa Paybill 4167853. No collateral required.",
+    canonical: "/",
+    keywords: "loans Kenya, grants Kenya, business loans Kenya, personal loans Kenya, USD loans Kenya, US funding Kenya, M-Pesa loans, Kenya business grants, personal grants Kenya, apply for loan Kenya, Cardone loans, Kenya USD funding",
+  })
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const faqs = [

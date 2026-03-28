@@ -1,6 +1,7 @@
 import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { Shield } from "lucide-react"
+import { useSEO } from "@/hooks/useSEO"
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }
 
@@ -128,6 +129,12 @@ If you are not satisfied with our response, you have the right to lodge a compla
 ]
 
 export default function Privacy() {
+  useSEO({
+    title: "Privacy Policy | Cardone Loans & Grants",
+    description: "Learn how Cardone Loans & Grants collects, uses, and protects your personal and business information when you apply for loans or grants in Kenya.",
+    canonical: "/privacy",
+    keywords: "Cardone loans privacy policy, data privacy Kenya loan, personal data loan application Kenya",
+  })
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
       <section className="relative pt-32 pb-16 bg-primary overflow-hidden">

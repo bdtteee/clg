@@ -2,6 +2,7 @@ import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useSEO } from "@/hooks/useSEO"
 import {
   CheckCircle2, ArrowRight, User, Briefcase, Gift, Clock,
   ShieldCheck, Smartphone, Heart, HelpCircle, ChevronDown, AlertCircle, Star
@@ -52,6 +53,12 @@ const faqs = [
 ]
 
 export default function Grants() {
+  useSEO({
+    title: "Personal & Business Grants in Kenya — $2,000 to $30,000 USD | Cardone Loans & Grants",
+    description: "Apply for non-repayable personal grants ($2,000–$10,000 USD) or business grants ($5,000–$30,000 USD) in Kenya. No repayment required. Pay via M-Pesa Paybill 4167853. Open to all Kenyans.",
+    canonical: "/grants",
+    keywords: "grants Kenya, business grants Kenya, personal grants Kenya, non-repayable grants Kenya, free grants Kenya, USD grants Kenya, US grants for Kenya, M-Pesa grant Kenya",
+  })
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (

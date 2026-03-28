@@ -2,6 +2,7 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Link } from "wouter"
+import { useSEO } from "@/hooks/useSEO"
 import {
   Mail, Phone, MapPin, Clock, MessageSquare, Globe,
   Smartphone, ArrowRight, CheckCircle2, Building2
@@ -11,6 +12,12 @@ import { useState } from "react"
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }
 
 export default function Contact() {
+  useSEO({
+    title: "Contact Us — Get Help with Your Loan or Grant | Cardone Loans & Grants",
+    description: "Contact the Cardone Loans & Grants team for help with your application, M-Pesa payment, or funding questions. Email us at info@cardoneloansgrants.com or use our contact form.",
+    canonical: "/contact",
+    keywords: "contact Cardone loans, Kenya loan support, grant application help Kenya, M-Pesa loan contact, Kenya funding enquiry",
+  })
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" })
   const [submitted, setSubmitted] = useState(false)
 

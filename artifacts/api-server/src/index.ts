@@ -4,6 +4,15 @@ import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
+// Prevent unhandled rejections and exceptions from crashing the process
+process.on("unhandledRejection", (reason: unknown) => {
+  console.error("[UnhandledRejection]", reason);
+});
+
+process.on("uncaughtException", (err: Error) => {
+  console.error("[UncaughtException]", err.message, err.stack);
+});
+
 export default app;
 
 async function seedAdmin() {

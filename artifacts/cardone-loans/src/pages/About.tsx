@@ -2,6 +2,7 @@ import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { useSEO } from "@/hooks/useSEO"
 import {
   Globe, Shield, Users, Award, Building2, Target, Heart,
   CheckCircle2, ArrowRight, MapPin, Clock, TrendingUp, Handshake
@@ -46,6 +47,12 @@ const milestones = [
 ]
 
 export default function About() {
+  useSEO({
+    title: "About Us — U.S.-Kenya Financial Bridge | Cardone Loans & Grants",
+    description: "Learn about Cardone Loans & Grants — the financial intermediary connecting Kenyan individuals and businesses with U.S. funding partners since 2019. Based in the USA with a dedicated Kenyan team.",
+    canonical: "/about",
+    keywords: "about Cardone loans, Kenya US funding company, financial intermediary Kenya, US Kenya funding bridge, Cardone loans history",
+  })
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
 

@@ -3,6 +3,7 @@ import { Link } from "wouter"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, HelpCircle, ChevronDown, Search } from "lucide-react"
 import { useState } from "react"
+import { useSEO } from "@/hooks/useSEO"
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }
 
@@ -64,6 +65,12 @@ const categories = [
 ]
 
 export default function FAQ() {
+  useSEO({
+    title: "FAQ — Loans & Grants Questions Answered | Cardone Loans & Grants",
+    description: "Get answers to all your questions about applying for personal and business loans and grants in Kenya. Learn about eligibility, M-Pesa fees, approval timelines, disbursement, and more.",
+    canonical: "/faq",
+    keywords: "Kenya loan FAQ, grant application questions, M-Pesa loan Kenya, loan eligibility Kenya, business loan questions Kenya, how to apply for grant Kenya",
+  })
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
   const [search, setSearch] = useState("")
 
