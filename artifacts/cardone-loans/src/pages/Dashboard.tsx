@@ -1,11 +1,11 @@
-import { useGetApplications, useGetNotifications, useMarkNotificationRead } from "@workspace/api-client-react"
+import { useGetApplications, useGetNotifications, useMarkNotificationRead, useLogout, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
-import { Link } from "wouter"
+import { Link, useLocation } from "wouter"
 import { format } from "date-fns"
-import { Bell, FileText, PlusCircle, ArrowRight, Loader2, Info, AlertCircle, PlayCircle } from "lucide-react"
+import { Bell, FileText, PlusCircle, ArrowRight, Loader2, Info, AlertCircle, PlayCircle, LogOut } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { getGetNotificationsQueryKey } from "@workspace/api-client-react"
 
@@ -24,8 +24,11 @@ function StatusBadge({ status, paymentCode }: { status: string; paymentCode?: st
 export function UserDashboard() {
   const { data: apps, isLoading: appsLoading } = useGetApplications()
   const { data: notifications, isLoading: notifsLoading } = useGetNotifications()
+  const { data: user } = useGetMe()
   const markReadMut = useMarkNotificationRead()
+  const logoutMut = useLogout()
   const queryClient = useQueryClient()
+  const [, setLocation] = useLocation()
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0
   const incompleteCount = apps?.filter(a => a.status === 'pending' && !a.paymentCode).length || 0
@@ -36,22 +39,46 @@ export function UserDashboard() {
     })
   }
 
+  const handleLogout = () => {
+    logoutMut.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() })
+        setLocation("/")
+      }
+    })
+  }
+
   if (appsLoading || notifsLoading) {
     return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
   }
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold">Client Dashboard</h1>
-          <p className="text-muted-foreground">Manage your applications and notifications</p>
+          <p className="text-muted-foreground">
+            {user?.email ? `Logged in as ${user.email}` : "Manage your applications and notifications"}
+          </p>
         </div>
-        <Link href="/apply">
-          <Button variant="accent">
-            <PlusCircle className="mr-2 h-4 w-4" /> New Application
+        <div className="flex items-center gap-3">
+          <Link href="/apply">
+            <Button variant="accent">
+              <PlusCircle className="mr-2 h-4 w-4" /> New Application
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            disabled={logoutMut.isPending}
+            className="text-muted-foreground hover:text-destructive hover:border-destructive/40"
+          >
+            {logoutMut.isPending
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <><LogOut className="mr-2 h-4 w-4" /> Log out</>
+            }
           </Button>
-        </Link>
+        </div>
       </div>
 
       {incompleteCount > 0 && (
