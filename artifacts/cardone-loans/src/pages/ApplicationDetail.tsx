@@ -1,11 +1,14 @@
 import { useGetApplication, getGetApplicationQueryKey } from "@workspace/api-client-react"
 import { useRoute } from "wouter"
+import { useQuery } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { format } from "date-fns"
-import { Loader2, ArrowLeft, Building2, User, FileText, Calendar, Zap, MessageSquare } from "lucide-react"
+import { Loader2, ArrowLeft, Building2, User, FileText, Calendar, Zap, MessageSquare, ExternalLink, CheckCircle2, Clock, XCircle, Upload } from "lucide-react"
 import { Link } from "wouter"
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
 
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
@@ -16,11 +19,37 @@ function StatusBadge({ status }: { status: string }) {
   }
 }
 
+function DocStatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case 'Approved':
+      return <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full"><CheckCircle2 className="h-3 w-3" />Approved</span>
+    case 'Rejected':
+      return <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full"><XCircle className="h-3 w-3" />Rejected</span>
+    case 'Not Uploaded':
+      return <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full"><Upload className="h-3 w-3" />Not Uploaded</span>
+    default:
+      return <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full"><Clock className="h-3 w-3" />Pending Review</span>
+  }
+}
+
+function useKycDocuments(appId: number) {
+  return useQuery({
+    queryKey: ["kyc-documents", appId],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/api/applications/${appId}/kyc-documents`, { credentials: "include" })
+      if (!res.ok) return []
+      return res.json()
+    },
+    enabled: !!appId,
+  })
+}
+
 export function ApplicationDetail() {
   const [, params] = useRoute("/applications/:id")
   const id = Number(params?.id)
   
   const { data: app, isLoading } = useGetApplication(id, { query: { queryKey: getGetApplicationQueryKey(id), enabled: !!id } })
+  const { data: kycDocs = [] } = useKycDocuments(id)
 
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
   if (!app) return <div className="p-12 text-center">Application not found</div>
@@ -78,7 +107,7 @@ export function ApplicationDetail() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <Card>
           <CardHeader className="bg-muted/30 border-b border-border">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -136,13 +165,66 @@ export function ApplicationDetail() {
               <div>
                 <h4 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Declared Purpose</h4>
                 <p className="text-foreground leading-relaxed p-4 bg-background rounded-lg border border-border">
-                  {app.purposeOfFunds}
+                  {app.purposeOfFunds || app.reason}
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* KYC/KYB Documents Section */}
+      <Card>
+        <CardHeader className="bg-muted/30 border-b border-border">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <FileText className="h-5 w-5 text-primary" />
+            {app.category === 'business' ? 'KYB' : 'KYC'} Documents
+          </CardTitle>
+          <CardDescription>
+            Documents submitted for identity and verification. Our team reviews these within 2–3 business days.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          {kycDocs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Upload className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="font-medium">No documents submitted yet.</p>
+              <p className="text-sm mt-1">Documents are submitted during the application process.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {kycDocs.map((doc: any) => (
+                <div key={doc.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-background hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm capitalize">{doc.documentType.replace(/_/g, ' ')}</p>
+                      {doc.rejectionReason && (
+                        <p className="text-xs text-destructive mt-0.5">Reason: {doc.rejectionReason}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <DocStatusBadge status={doc.status} />
+                    {doc.fileUrl && (
+                      <a
+                        href={doc.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+                      >
+                        View <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

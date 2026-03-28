@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useLogin, useRegister, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react"
 import { useQueryClient } from "@tanstack/react-query"
-import { Building2, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShieldCheck, Globe, Clock } from "lucide-react"
+import { Building2, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShieldCheck, Globe, Clock, Eye, EyeOff } from "lucide-react"
 
 const brandFeatures = [
   { icon: ShieldCheck, text: "256-bit SSL encryption, always" },
@@ -74,6 +74,43 @@ function AuthShell({ children, reverse = false }: { children: React.ReactNode; r
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-6 py-16 bg-background">
         {children}
       </div>
+    </div>
+  )
+}
+
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+  required,
+  minLength,
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  required?: boolean
+  minLength?: number
+}) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative">
+      <Input
+        type={show ? "text" : "password"}
+        required={required}
+        minLength={minLength}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || "••••••••"}
+        className="h-11 pr-11"
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => setShow(s => !s)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
     </div>
   )
 }
@@ -148,14 +185,7 @@ export function Login() {
 
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-foreground">Password</label>
-            <Input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="h-11"
-            />
+            <PasswordInput value={password} onChange={setPassword} />
           </div>
 
           <Button type="submit" className="w-full h-12 font-bold text-base mt-2" disabled={loginMutation.isPending}>
@@ -186,6 +216,7 @@ export function Register() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
   const [, setLocation] = useLocation()
 
@@ -195,10 +226,14 @@ export function Register() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match. Please try again.")
+      return
+    }
     registerMutation.mutate({ data: { fullName, email, password } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() })
-        setLocation('/dashboard')
+        setLocation('/confirm-email')
       },
       onError: (error: any) => {
         setErrorMsg(error?.data?.error || error?.message || "Registration failed. Please try again.")
@@ -258,16 +293,35 @@ export function Register() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-foreground">Password</label>
-            <Input
-              type="password"
+            <label className="text-sm font-semibold text-foreground">Create Password</label>
+            <PasswordInput
+              value={password}
+              onChange={setPassword}
+              placeholder="At least 6 characters"
               required
               minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
-              className="h-11"
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-foreground">Confirm Password</label>
+            <PasswordInput
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              placeholder="Re-enter your password"
+              required
+              minLength={6}
+            />
+            {confirmPassword && password !== confirmPassword && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> Passwords do not match
+              </p>
+            )}
+            {confirmPassword && password === confirmPassword && (
+              <p className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Passwords match
+              </p>
+            )}
           </div>
 
           <Button type="submit" className="w-full h-12 font-bold text-base mt-2" disabled={registerMutation.isPending}>

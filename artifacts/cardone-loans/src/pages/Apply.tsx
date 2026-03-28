@@ -8,7 +8,7 @@ import { CreateApplicationRequestType, CreateApplicationRequestCategory } from "
 import { formatCurrency } from "@/lib/utils"
 import {
   Building2, User, ChevronRight, Loader2, CheckCircle2,
-  ArrowRight, Zap, Smartphone, AlertCircle
+  ArrowRight, Zap, Smartphone, AlertCircle, FileText, Upload, ExternalLink
 } from "lucide-react"
 
 const PRODUCTS = {
@@ -16,6 +16,34 @@ const PRODUCTS = {
   business_grant: { type: 'grant' as const, category: 'business' as const, title: 'Business Grant', min: 5000, max: 30000, feeUsd: 20, feeKes: 2600, icon: Building2 },
   personal_loan: { type: 'loan' as const, category: 'personal' as const, title: 'Personal Loan', min: 10000, max: 50000, feeUsd: 20, feeKes: 2600, icon: User },
   business_loan: { type: 'loan' as const, category: 'business' as const, title: 'Business Loan', min: 20000, max: 100000, feeUsd: 50, feeKes: 6500, icon: Building2 },
+}
+
+const PERSONAL_DOCS = [
+  { key: "national_id_front", label: "National ID – Front Side", description: "Clear photo of the front of your National ID card" },
+  { key: "national_id_back", label: "National ID – Back Side", description: "Clear photo of the back of your National ID card" },
+  { key: "passport_photo", label: "Passport-Size Photo", description: "Recent passport-size photograph (plain background)" },
+  { key: "proof_of_income", label: "Proof of Income", description: "Latest payslip, bank statement (last 3 months), or business income proof" },
+]
+
+const BUSINESS_DOCS = [
+  { key: "business_registration", label: "Business Registration Certificate", description: "Certificate of incorporation or business registration" },
+  { key: "kra_certificate", label: "KRA PIN Certificate", description: "Kenya Revenue Authority PIN Certificate for the business" },
+  { key: "directors_id", label: "Director's National ID", description: "National ID of the principal director or owner" },
+  { key: "bank_statement", label: "Business Bank Statement", description: "Last 3 months' bank statements for the business account" },
+]
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
+
+async function saveKycDocuments(appId: number, docs: Record<string, string>) {
+  const documents = Object.entries(docs).map(([documentType, fileUrl]) => ({ documentType, fileUrl }))
+  const res = await fetch(`${BASE}/api/applications/${appId}/kyc-documents`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ documents }),
+  })
+  if (!res.ok) throw new Error("Failed to save documents")
+  return res.json()
 }
 
 export function Apply() {
@@ -28,14 +56,19 @@ export function Apply() {
   const [paymentCode, setPaymentCode] = useState("")
   const [formError, setFormError] = useState("")
 
+  const [kycDocs, setKycDocs] = useState<Record<string, string>>({})
+  const [kycSaving, setKycSaving] = useState(false)
+
   const createMut = useCreateApplication()
   const paymentMut = useSubmitPayment()
 
   const productDef = selectedProduct ? PRODUCTS[selectedProduct] : null
+  const docList = productDef?.category === 'business' ? BUSINESS_DOCS : PERSONAL_DOCS
 
   const handleProductSelect = (key: keyof typeof PRODUCTS) => {
     setSelectedProduct(key)
     setAppData({ amountRequested: PRODUCTS[key].min, country: "Kenya" })
+    setKycDocs({})
     setStep(2)
   }
 
@@ -48,6 +81,7 @@ export function Apply() {
       type: productDef.type as CreateApplicationRequestType,
       category: productDef.category as CreateApplicationRequestCategory,
       fullName: appData.fullName,
+      email: appData.email,
       phoneNumber: appData.phoneNumber,
       purposeOfFunds: appData.reason || appData.purposeOfFunds || "",
       amountRequested: Number(appData.amountRequested),
@@ -71,6 +105,21 @@ export function Apply() {
     })
   }
 
+  const handleKycSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!createdAppId) return
+    setFormError("")
+    setKycSaving(true)
+    try {
+      await saveKycDocuments(createdAppId, kycDocs)
+      setStep(4)
+    } catch {
+      setFormError("Failed to save documents. Please try again.")
+    } finally {
+      setKycSaving(false)
+    }
+  }
+
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!createdAppId) return
@@ -78,12 +127,14 @@ export function Apply() {
       id: createdAppId,
       data: { paymentCode }
     }, {
-      onSuccess: () => setStep(4),
+      onSuccess: () => setStep(5),
       onError: (err: any) => {
         setFormError(err?.data?.error || err?.message || "Payment verification failed.")
       }
     })
   }
+
+  const stepLabels = ["Select", "Details", "Documents", "Payment", "Done"]
 
   return (
     <div className="min-h-screen bg-background py-16 pt-28">
@@ -95,19 +146,18 @@ export function Apply() {
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-border -z-10 rounded-full" />
             <div
               className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-primary -z-10 rounded-full transition-all duration-500"
-              style={{ width: `${((step - 1) / 3) * 100}%` }}
+              style={{ width: `${((step - 1) / (stepLabels.length - 1)) * 100}%` }}
             />
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors duration-300 ${step >= i ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-card border-2 border-border text-muted-foreground'}`}>
-                {step > i ? <CheckCircle2 className="w-5 h-5" /> : i}
+            {stepLabels.map((_, i) => (
+              <div key={i} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors duration-300 ${step >= i + 1 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-card border-2 border-border text-muted-foreground'}`}>
+                {step > i + 1 ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
               </div>
             ))}
           </div>
           <div className="flex justify-between mt-3 text-xs font-semibold text-muted-foreground">
-            <span className={step >= 1 ? "text-primary" : ""}>Select</span>
-            <span className={step >= 2 ? "text-primary" : ""}>Details</span>
-            <span className={step >= 3 ? "text-primary" : ""}>Payment</span>
-            <span className={step >= 4 ? "text-primary" : ""}>Done</span>
+            {stepLabels.map((label, i) => (
+              <span key={label} className={step >= i + 1 ? "text-primary" : ""}>{label}</span>
+            ))}
           </div>
         </div>
 
@@ -181,7 +231,6 @@ export function Apply() {
               )}
               <form onSubmit={handleFormSubmit} className="space-y-6">
 
-                {/* Amount */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold">Requested Amount (USD $)</label>
                   <Input
@@ -260,15 +309,100 @@ export function Apply() {
                 </div>
 
                 <Button type="submit" size="lg" className="w-full h-12 font-bold" disabled={createMut.isPending}>
-                  {createMut.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue to M-Pesa Payment <ChevronRight className="ml-2 h-5 w-5" /></>}
+                  {createMut.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue to KYC Documents <ChevronRight className="ml-2 h-5 w-5" /></>}
                 </Button>
               </form>
             </CardContent>
           </Card>
         )}
 
-        {/* STEP 3: M-Pesa Payment */}
+        {/* STEP 3: KYC / KYB Documents */}
         {step === 3 && productDef && createdAppId && (
+          <Card className="animate-in fade-in slide-in-from-right-8 duration-500 shadow-xl shadow-primary/5">
+            <CardHeader className="border-b border-border bg-muted/30">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <FileText className="h-6 w-6 text-primary" />
+                    {productDef.category === 'business' ? 'KYB' : 'KYC'} Document Submission
+                  </CardTitle>
+                  <CardDescription>
+                    Upload your documents via Google Drive or Dropbox and paste the shareable link below.
+                    All documents must be clearly legible and up-to-date.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-8">
+              <div className="mb-6 p-4 bg-primary/5 border border-primary/15 rounded-xl text-sm text-muted-foreground">
+                <p className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <Upload className="h-4 w-4 text-primary" /> How to submit documents
+                </p>
+                <ol className="list-decimal list-inside space-y-1 mt-2">
+                  <li>Upload each document to Google Drive or Dropbox</li>
+                  <li>Right-click → <strong>Share</strong> → set to <strong>"Anyone with the link"</strong></li>
+                  <li>Copy the link and paste it in the field below</li>
+                </ol>
+              </div>
+
+              {formError && (
+                <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm flex items-center gap-2 border border-destructive/20 mb-6">
+                  <AlertCircle className="h-4 w-4 shrink-0" />{formError}
+                </div>
+              )}
+
+              <form onSubmit={handleKycSubmit} className="space-y-5">
+                {docList.map((doc) => (
+                  <div key={doc.key} className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground">{doc.label}</label>
+                    <p className="text-xs text-muted-foreground">{doc.description}</p>
+                    <div className="relative">
+                      <Input
+                        type="url"
+                        value={kycDocs[doc.key] || ''}
+                        onChange={e => setKycDocs(prev => ({ ...prev, [doc.key]: e.target.value }))}
+                        placeholder="https://drive.google.com/file/d/..."
+                        className="h-11 pr-10"
+                      />
+                      {kycDocs[doc.key] && (
+                        <a
+                          href={kycDocs[doc.key]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                    {kycDocs[doc.key] && (
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Document link saved
+                      </p>
+                    )}
+                  </div>
+                ))}
+
+                <div className="flex gap-3 pt-4 border-t border-border">
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(2)}>
+                    ← Back
+                  </Button>
+                  <Button type="submit" size="lg" className="flex-2 h-12 font-bold flex-1" disabled={kycSaving}>
+                    {kycSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue to Payment <ChevronRight className="ml-2 h-5 w-5" /></>}
+                  </Button>
+                </div>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  You can skip any document and submit it later from your application dashboard.
+                  Missing documents may delay processing.
+                </p>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* STEP 4: M-Pesa Payment */}
+        {step === 4 && productDef && createdAppId && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 animate-in fade-in slide-in-from-right-8 duration-500">
             <Card className="md:col-span-3 border-primary/20 shadow-xl shadow-primary/5">
               <CardHeader className="bg-primary text-primary-foreground rounded-t-xl">
@@ -296,10 +430,10 @@ export function Apply() {
                     <>Amount: <strong className="text-primary font-bold">KES {productDef.feeKes.toLocaleString()}</strong></>,
                     "Enter your M-Pesa PIN and confirm",
                     "Copy the confirmation code from your SMS",
-                  ].map((step, i) => (
+                  ].map((s, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <span className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                      <span>{step}</span>
+                      <span>{s}</span>
                     </li>
                   ))}
                 </ol>
@@ -339,6 +473,7 @@ export function Apply() {
                     { label: "Amount (USD)", value: formatCurrency(appData.amountRequested) },
                     { label: "Country", value: "🇰🇪 Kenya" },
                     { label: "App Reference", value: `APP-${createdAppId}` },
+                    { label: "Documents", value: `${Object.values(kycDocs).filter(Boolean).length} / ${docList.length} submitted` },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between border-b border-border pb-2 last:border-0 last:pb-0">
                       <span className="text-muted-foreground text-sm">{label}</span>
@@ -370,8 +505,8 @@ export function Apply() {
           </div>
         )}
 
-        {/* STEP 4: Success */}
-        {step === 4 && productDef && (
+        {/* STEP 5: Success */}
+        {step === 5 && productDef && (
           <div className="animate-in zoom-in-95 duration-700 max-w-2xl mx-auto text-center mt-8">
             <div className="w-24 h-24 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-8">
               <CheckCircle2 className="w-12 h-12 text-secondary" />
@@ -400,7 +535,7 @@ export function Apply() {
               <h4 className="font-bold mb-4">What happens next?</h4>
               <ul className="space-y-4">
                 {[
-                  "Our U.S.-based underwriting team will review your complete profile within <strong>2–3 business days</strong>.",
+                  "Our U.S.-based underwriting team will review your complete profile and documents within <strong>2–3 business days</strong>.",
                   "You'll receive an email and dashboard notification for your final approval decision.",
                   "Upon final approval, USD funds are disbursed within <strong>14 days</strong> to your provided account.",
                 ].map((text, i) => (

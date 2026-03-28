@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,20 +39,53 @@ const queryClient = new QueryClient({
   },
 });
 
-// Pages that use their own full-screen layout (no Navbar/Footer)
-const FULL_SCREEN_PATHS = ["/login", "/register", "/admin-login", "/confirm-email", "/reset-password"];
+// Routes that render with NO chrome (no Navbar/Footer)
+const NO_CHROME_PATHS = [
+  "/login", "/register", "/admin-login", "/confirm-email", "/reset-password",
+  "/dashboard", "/apply", "/applications",
+];
+
+function useShouldHideChrome() {
+  const [location] = useLocation()
+  return NO_CHROME_PATHS.some(p => location === p || location.startsWith(p + "/"))
+}
 
 function Router() {
+  const hideChrome = useShouldHideChrome()
+
   return (
     <Switch>
-      {/* Full-screen auth/info pages (no Navbar/Footer) */}
+      {/* Full-screen auth pages */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/confirm-email" component={ConfirmEmail} />
       <Route path="/reset-password" component={ResetPassword} />
 
-      {/* Standard pages with Navbar + Footer */}
+      {/* Logged-in client pages (no Navbar/Footer) */}
+      <Route path="/dashboard">
+        {() => (
+          <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/apply">
+        {() => (
+          <ProtectedRoute>
+            <Apply />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/applications/:id">
+        {() => (
+          <ProtectedRoute>
+            <ApplicationDetail />
+          </ProtectedRoute>
+        )}
+      </Route>
+
+      {/* All other pages with Navbar + Footer */}
       <Route>
         {() => (
           <div className="flex flex-col min-h-screen">
@@ -68,29 +101,6 @@ function Router() {
                 <Route path="/faq" component={FAQ} />
                 <Route path="/terms" component={Terms} />
                 <Route path="/privacy" component={Privacy} />
-
-                {/* Protected User Routes */}
-                <Route path="/apply">
-                  {() => (
-                    <ProtectedRoute>
-                      <Apply />
-                    </ProtectedRoute>
-                  )}
-                </Route>
-                <Route path="/dashboard">
-                  {() => (
-                    <ProtectedRoute>
-                      <UserDashboard />
-                    </ProtectedRoute>
-                  )}
-                </Route>
-                <Route path="/applications/:id">
-                  {() => (
-                    <ProtectedRoute>
-                      <ApplicationDetail />
-                    </ProtectedRoute>
-                  )}
-                </Route>
 
                 {/* Protected Admin Routes */}
                 <Route path="/admin">

@@ -6,6 +6,7 @@ import {
   adminActionsTable,
   usersTable,
   manualPaymentsTable,
+  kycDocumentsTable,
 } from "@workspace/db/schema";
 import { eq, count, desc } from "drizzle-orm";
 import { requireAdmin, AuthenticatedRequest } from "../middlewares/auth.js";
@@ -52,6 +53,64 @@ router.get("/applications", requireAdmin, async (req: AuthenticatedRequest, res)
   } catch (error) {
     console.error("Admin get applications error:", error);
     res.status(500).json({ error: "Failed to fetch applications" });
+  }
+});
+
+// GET /api/admin/applications/:id/kyc-documents
+router.get("/applications/:id/kyc-documents", requireAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid application ID" });
+      return;
+    }
+
+    const docs = await db
+      .select()
+      .from(kycDocumentsTable)
+      .where(eq(kycDocumentsTable.applicationId, id));
+
+    res.json(docs);
+  } catch (error) {
+    console.error("Admin get KYC documents error:", error);
+    res.status(500).json({ error: "Failed to fetch KYC documents" });
+  }
+});
+
+// PATCH /api/admin/kyc-documents/:id
+router.patch("/kyc-documents/:id", requireAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid document ID" });
+      return;
+    }
+
+    const { status, rejectionReason } = req.body;
+    if (!status) {
+      res.status(400).json({ error: "status is required" });
+      return;
+    }
+
+    const [doc] = await db
+      .update(kycDocumentsTable)
+      .set({
+        status,
+        rejectionReason: rejectionReason || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(kycDocumentsTable.id, id))
+      .returning();
+
+    if (!doc) {
+      res.status(404).json({ error: "Document not found" });
+      return;
+    }
+
+    res.json(doc);
+  } catch (error) {
+    console.error("Update KYC document error:", error);
+    res.status(500).json({ error: "Failed to update KYC document" });
   }
 });
 
