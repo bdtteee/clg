@@ -47,7 +47,10 @@ async function uploadToStorage(file: File): Promise<{ objectPath: string; fileNa
   const { uploadURL, objectPath } = await requestPresignedUrl(file)
   const putRes = await fetch(uploadURL, {
     method: "PUT",
-    headers: { "Content-Type": file.type },
+    headers: {
+      "Content-Type": file.type,
+      "x-upsert": "true",
+    },
     body: file,
   })
   if (!putRes.ok) throw new Error("Upload failed")
