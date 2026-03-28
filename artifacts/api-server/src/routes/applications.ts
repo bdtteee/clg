@@ -109,6 +109,77 @@ router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
+// PATCH /api/applications/:id — edit details of a pending (incomplete) application
+router.patch("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid application ID" }); return; }
+
+    const [existing] = await db
+      .select()
+      .from(applicationsTable)
+      .where(and(eq(applicationsTable.id, id), eq(applicationsTable.userId, req.userId!)))
+      .limit(1);
+
+    if (!existing) { res.status(404).json({ error: "Application not found" }); return; }
+    if (existing.status !== "pending") {
+      res.status(403).json({ error: "Only pending applications can be edited" });
+      return;
+    }
+
+    const {
+      amountRequested, fullName, email, phoneNumber, country, reason, purposeOfFunds,
+      nationalIdNumber, employmentStatus, monthlyIncome,
+      businessName, registrationNumber, kraPin, annualRevenue,
+    } = req.body;
+
+    const purposeText = purposeOfFunds || reason;
+    const preapprovedAmount =
+      existing.type === "loan" && amountRequested
+        ? (parseFloat(amountRequested) * 0.65).toFixed(2)
+        : existing.preapprovedAmount;
+
+    const [app] = await db
+      .update(applicationsTable)
+      .set({
+        ...(fullName !== undefined && { fullName }),
+        ...(email !== undefined && { email }),
+        ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(country !== undefined && { country }),
+        ...(purposeText !== undefined && { reason: purposeText }),
+        ...(amountRequested !== undefined && {
+          amountRequested: parseFloat(amountRequested).toFixed(2),
+          preapprovedAmount,
+        }),
+        ...(nationalIdNumber !== undefined && { nationalIdNumber }),
+        ...(employmentStatus !== undefined && { employmentStatus }),
+        ...(monthlyIncome !== undefined && {
+          monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome).toFixed(2) : null,
+        }),
+        ...(businessName !== undefined && { businessName }),
+        ...(registrationNumber !== undefined && { registrationNumber }),
+        ...(kraPin !== undefined && { kraPin }),
+        ...(annualRevenue !== undefined && {
+          annualRevenue: annualRevenue ? parseFloat(annualRevenue).toFixed(2) : null,
+        }),
+        updatedAt: new Date(),
+      })
+      .where(eq(applicationsTable.id, id))
+      .returning();
+
+    res.json({
+      ...app,
+      amountRequested: parseFloat(app.amountRequested),
+      preapprovedAmount: app.preapprovedAmount ? parseFloat(app.preapprovedAmount) : null,
+      monthlyIncome: app.monthlyIncome ? parseFloat(app.monthlyIncome) : null,
+      annualRevenue: app.annualRevenue ? parseFloat(app.annualRevenue) : null,
+    });
+  } catch (error) {
+    console.error("Update application error:", error);
+    res.status(500).json({ error: "Failed to update application" });
+  }
+});
+
 router.post("/:id/payment", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const id = parseInt(req.params.id as string);

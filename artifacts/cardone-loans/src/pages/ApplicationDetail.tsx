@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { format } from "date-fns"
-import { Loader2, ArrowLeft, Building2, User, FileText, Calendar, Zap, MessageSquare, ExternalLink, CheckCircle2, Clock, XCircle, Upload } from "lucide-react"
+import { Loader2, ArrowLeft, Building2, User, FileText, Calendar, Zap, MessageSquare, ExternalLink, CheckCircle2, Clock, XCircle, Upload, Pencil } from "lucide-react"
 import { Link } from "wouter"
+import { Button } from "@/components/ui/button"
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
 
@@ -76,6 +77,23 @@ export function ApplicationDetail() {
           <p className="text-3xl font-display font-bold">{formatCurrency(app.amountRequested)}</p>
         </div>
       </div>
+
+      {app.status === 'pending' && !app.paymentCode && (
+        <div className="mb-8 p-4 bg-orange-50 border border-orange-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <Pencil className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-orange-800">This application is incomplete</p>
+              <p className="text-sm text-orange-700">Edit your details and submit documents to complete it.</p>
+            </div>
+          </div>
+          <Link href={`/apply?resume=${app.id}`}>
+            <Button size="sm" className="bg-orange-600 hover:bg-orange-700 shrink-0">
+              <Pencil className="mr-2 h-4 w-4" /> Edit & Complete
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {app.adminComment && (
         <Card className="mb-8 border-l-4 border-l-primary bg-primary/5">
@@ -210,7 +228,7 @@ export function ApplicationDetail() {
                     <DocStatusBadge status={doc.status} />
                     {doc.fileUrl && (
                       <a
-                        href={doc.fileUrl}
+                        href={`${BASE}/api/storage/objects/${doc.fileUrl.replace(/^\/objects\//, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"

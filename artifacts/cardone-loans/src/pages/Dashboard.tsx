@@ -120,7 +120,7 @@ export function UserDashboard() {
                         {isIncomplete ? (
                           <Link href={`/apply?resume=${app.id}`}>
                             <Button size="sm" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700">
-                              <PlayCircle className="mr-2 h-4 w-4" /> Complete Now
+                              <PlayCircle className="mr-2 h-4 w-4" /> Edit & Submit
                             </Button>
                           </Link>
                         ) : (

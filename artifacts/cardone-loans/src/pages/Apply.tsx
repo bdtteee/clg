@@ -237,13 +237,8 @@ export function Apply() {
           country: app.country || "Kenya",
         })
 
-        // Check if KYC docs already submitted
-        const docs = await loadKycDocuments(id)
-        if (docs.length > 0) {
-          setStep(4) // go to payment
-        } else {
-          setStep(3) // go to KYC docs
-        }
+        // Always start at step 2 so the user can review/edit their details
+        setStep(2)
       } catch {}
     })()
   }, [resumeId])
@@ -256,11 +251,48 @@ export function Apply() {
     setStep(2)
   }
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!productDef) return
     setFormError("")
 
+    // If editing an existing incomplete application, PATCH it
+    if (createdAppId) {
+      try {
+        const patchRes = await fetch(`${BASE}/api/applications/${createdAppId}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName: appData.fullName,
+            email: appData.email,
+            phoneNumber: appData.phoneNumber,
+            purposeOfFunds: appData.reason || "",
+            amountRequested: Number(appData.amountRequested),
+            businessName: appData.businessName,
+            nationalIdNumber: appData.nationalIdNumber,
+            kraPin: appData.kraPin,
+            registrationNumber: appData.registrationNumber,
+            employmentStatus: appData.employmentStatus,
+            monthlyIncome: appData.monthlyIncome ? Number(appData.monthlyIncome) : null,
+            annualRevenue: appData.annualRevenue ? Number(appData.annualRevenue) : null,
+          }),
+        })
+        if (!patchRes.ok) {
+          const body = await patchRes.json().catch(() => ({}))
+          setFormError(body.error || "Failed to save changes. Please try again.")
+          return
+        }
+        // Check if KYC docs already exist — if so jump to payment
+        const docs = await loadKycDocuments(createdAppId)
+        setStep(docs.length > 0 ? 4 : 3)
+      } catch {
+        setFormError("Failed to save changes. Please try again.")
+      }
+      return
+    }
+
+    // New application — POST
     const payload = {
       type: productDef.type as CreateApplicationRequestType,
       category: productDef.category as CreateApplicationRequestCategory,
@@ -418,10 +450,12 @@ export function Apply() {
             <CardHeader className="border-b border-border bg-muted/30">
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-2xl">{productDef.title} Application</CardTitle>
-                  <CardDescription>Provide accurate information for fast processing.</CardDescription>
+                  <CardTitle className="text-2xl">{createdAppId ? 'Edit Application' : `${productDef.title} Application`}</CardTitle>
+                  <CardDescription>{createdAppId ? 'Review and update your details, then continue.' : 'Provide accurate information for fast processing.'}</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setStep(1)}>← Back</Button>
+                {!createdAppId && (
+                  <Button variant="ghost" size="sm" onClick={() => setStep(1)}>← Back</Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="pt-8">
@@ -499,7 +533,12 @@ export function Apply() {
                 </div>
 
                 <Button type="submit" size="lg" className="w-full h-12 font-bold" disabled={createMut.isPending}>
-                  {createMut.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue to Document Upload <ChevronRight className="ml-2 h-5 w-5" /></>}
+                  {createMut.isPending
+                    ? <Loader2 className="h-5 w-5 animate-spin" />
+                    : createdAppId
+                      ? <>Save Changes & Continue <ChevronRight className="ml-2 h-5 w-5" /></>
+                      : <>Continue to Document Upload <ChevronRight className="ml-2 h-5 w-5" /></>
+                  }
                 </Button>
               </form>
             </CardContent>
