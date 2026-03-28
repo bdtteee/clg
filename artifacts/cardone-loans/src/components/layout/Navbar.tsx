@@ -25,8 +25,8 @@ export function Navbar() {
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() })
-        setLocation("/")
+        queryClient.clear()
+        window.location.href = "/"
       }
     })
   }

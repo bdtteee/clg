@@ -42,8 +42,8 @@ export function UserDashboard() {
   const handleLogout = () => {
     logoutMut.mutate(undefined, {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() })
-        setLocation("/")
+        queryClient.clear()
+        window.location.href = "/"
       }
     })
   }
