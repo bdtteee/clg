@@ -194,6 +194,9 @@ export function Apply() {
   // KYC uploaded files: key → UploadedFile | null
   const [kycFiles, setKycFiles] = useState<Record<string, UploadedFile | null>>({})
 
+  // Business plan upload (step 2)
+  const [businessPlanFile, setBusinessPlanFile] = useState<UploadedFile | null>(null)
+
   const setDoc = (key: string, val: UploadedFile | null) =>
     setKycFiles(prev => ({ ...prev, [key]: val }))
 
@@ -324,7 +327,7 @@ export function Apply() {
     setFormError("")
 
     // Check no file is still uploading
-    const uploading = Object.values(kycFiles).some(f => f?.uploading)
+    const uploading = Object.values(kycFiles).some(f => f?.uploading) || businessPlanFile?.uploading
     if (uploading) { setFormError("Please wait for all files to finish uploading."); return }
 
     setKycSaving(true)
@@ -350,6 +353,11 @@ export function Apply() {
           docs.push({ documentType: 'director_id_back', fileUrl: kycFiles['director_id_back']?.objectPath || null, fileName: kycFiles['director_id_back']?.fileName || null })
         }
         docs.push({ documentType: 'business_bank_statement', fileUrl: kycFiles['business_bank_statement']?.objectPath || null, fileName: kycFiles['business_bank_statement']?.fileName || null })
+      }
+
+      // Include business plan if uploaded in step 2
+      if (businessPlanFile?.objectPath) {
+        docs.push({ documentType: 'business_plan', fileUrl: businessPlanFile.objectPath, fileName: businessPlanFile.fileName || null })
       }
 
       await saveKycDocuments(createdAppId, docs)
@@ -529,6 +537,23 @@ export function Apply() {
                     className="w-full min-h-[100px] rounded-xl border border-border bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 transition-all"
                     required value={appData.reason || ''} onChange={e => setAppData({ ...appData, reason: e.target.value })}
                     placeholder="Describe how you plan to use these funds..."
+                  />
+                </div>
+
+                {/* Business Plan Upload */}
+                <div className="space-y-2 p-5 rounded-xl border border-dashed border-border bg-muted/20">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <label className="text-sm font-semibold">Business Plan <span className="text-muted-foreground font-normal">(Optional)</span></label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Upload a business plan, proposal, or any supporting document that explains your intended use of funds. This helps reviewers understand your project and may improve your approval outcome. Accepted: PDF, DOCX, JPG, PNG.
+                  </p>
+                  <FileUploadField
+                    label=""
+                    hint="PDF, Word document, or image — max 10 MB"
+                    uploaded={businessPlanFile}
+                    onChange={setBusinessPlanFile}
                   />
                 </div>
 

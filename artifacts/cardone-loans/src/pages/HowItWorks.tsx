@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   User, DollarSign, Smartphone, TrendingUp, CheckCircle2, ArrowRight,
-  Clock, ShieldCheck, Globe, Zap, FileText, Bell, BadgeCheck
+  Clock, ShieldCheck, Globe, Zap, FileText, Handshake, BadgeCheck
 } from "lucide-react"
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }
@@ -187,7 +187,7 @@ export default function HowItWorks() {
             {[
               { icon: FileText, title: "Application Review", desc: "The U.S. funding partner reviews your application details, stated purpose, and financial profile against their eligibility criteria." },
               { icon: BadgeCheck, title: "Identity Verification", desc: "Basic identity verification is conducted using the information and documents submitted in your application. No in-person visit required." },
-              { icon: Bell, title: "Partner Matching", desc: "Your application is matched with the most appropriate funding partner from our network — based on loan/grant type, amount, and applicant profile." },
+              { icon: Handshake, title: "Partner Matching", desc: "Your application is matched with the most appropriate funding partner from our network — based on loan/grant type, amount, and applicant profile." },
             ].map((item, i) => (
               <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ delay: i * 0.1 }}>
                 <Card className="h-full border-border hover:shadow-lg transition-all">

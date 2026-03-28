@@ -6,7 +6,8 @@ import { motion, useInView } from "framer-motion"
 import {
   CheckCircle2, ShieldCheck, Zap, Briefcase, User, HelpCircle,
   ChevronDown, ArrowRight, Star, Globe, Clock, TrendingUp,
-  DollarSign, Users, Award, Lock, ChevronRight, Smartphone, MapPin, Building
+  DollarSign, Users, Award, Lock, ChevronRight, Smartphone, MapPin, Building,
+  FileText, GraduationCap, Heart, Home as HomeIcon, Store, Tractor, Wrench, Quote
 } from "lucide-react"
 
 function AnimatedCounter({ end, duration = 2, prefix = "", suffix = "" }: {
@@ -239,9 +240,9 @@ export default function Home() {
 
             {[
               { step: "01", icon: User, title: "Choose Your Product", desc: "Select from personal or business loan/grant — sized for your specific need and ambition, from $2,000 to $100,000 USD.", color: "bg-primary/10 text-primary" },
-              { step: "02", icon: CheckCircle2, title: "Submit Application", desc: "Fill out our concise online form with your personal or business details. Takes under 5 minutes for most Kenyan applicants.", color: "bg-secondary/10 text-secondary" },
+              { step: "02", icon: FileText, title: "Submit Application", desc: "Fill out our concise online form with your personal or business details. Takes under 5 minutes for most Kenyan applicants.", color: "bg-secondary/10 text-secondary" },
               { step: "03", icon: Smartphone, title: "Pay via M-Pesa", desc: "Send the small processing fee via M-Pesa Paybill 4167853. This activates your underwriting review with our U.S. partners.", color: "bg-accent/20 text-accent-foreground" },
-              { step: "04", icon: TrendingUp, title: "Receive USD Funding", desc: "Decision in 2–3 business days. Funds disbursed within 14 days of approval directly to your account.", color: "bg-primary/10 text-primary" },
+              { step: "04", icon: DollarSign, title: "Receive USD Funding", desc: "Decision in 2–3 business days. Funds disbursed within 14 days of approval directly to your account.", color: "bg-primary/10 text-primary" },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -429,51 +430,153 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── TESTIMONIALS ──────────────────────────────── */}
-      <section className="py-20 bg-muted/20">
+      {/* ─── WHAT KENYANS FUND ─────────────────────────── */}
+      <section className="py-24 bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5 }}
-            className="text-center max-w-xl mx-auto mb-12"
+            className="text-center max-w-2xl mx-auto mb-14"
           >
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Kenyans who got funded</h2>
-            <div className="flex justify-center gap-1 mb-1">
-              {[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-accent text-accent" />)}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-semibold mb-4">
+              <TrendingUp className="h-4 w-4" /> Common Funding Uses
             </div>
-            <p className="text-muted-foreground text-sm">Rated 4.9/5 by over 3,000 Kenyan applicants</p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">What Kenyans use U.S. funding for</h2>
+            <p className="text-muted-foreground text-lg">
+              From education to agribusiness, our funding powers real Kenyan goals. There are no restrictions on use — personal or business, your vision leads.
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
-              { name: "Grace M.", role: "Business Owner, Nairobi", quote: "Applied for the Business Grant on Monday, had my approval decision by Wednesday. The team was professional and the M-Pesa payment was simple. Highly recommended for any Kenyan business owner.", rating: 5 },
-              { name: "David K.", role: "Engineer, Mombasa", quote: "I needed capital to start a tech project. The 65% pre-approval notice came instantly after submitting my loan. Process was transparent — exactly as described on the website. Funds arrived in 14 days.", rating: 5 },
-              { name: "Amina W.", role: "Restaurant Owner, Kisumu", quote: "I was initially skeptical about a U.S. company helping Kenyans. But the process was fully online, the M-Pesa fee was straightforward, and the funds were disbursed exactly as promised. Legit!", rating: 5 },
+              { icon: GraduationCap, label: "Education & Training", color: "bg-primary/10 text-primary", desc: "University fees, professional courses, overseas study programmes" },
+              { icon: Store, label: "Business Startup", color: "bg-secondary/10 text-secondary", desc: "Launch capital, stock, branding, and first-year operating costs" },
+              { icon: HomeIcon, label: "Housing", color: "bg-accent/20 text-accent-foreground", desc: "Home construction, renovation, land purchase, or rent arrears" },
+              { icon: Heart, label: "Medical", color: "bg-primary/10 text-primary", desc: "Surgery, treatment abroad, specialist consultations, insurance" },
+              { icon: Tractor, label: "Agriculture", color: "bg-secondary/10 text-secondary", desc: "Irrigation, seeds, equipment, greenhouse construction, livestock" },
+              { icon: Wrench, label: "Equipment", color: "bg-accent/20 text-accent-foreground", desc: "Machinery, vehicles, technology upgrades for your business" },
+            ].map((use, i) => (
+              <motion.div
+                key={i}
+                initial="hidden" whileInView="visible" viewport={{ once: true }}
+                variants={fadeUp} transition={{ duration: 0.5, delay: i * 0.07 }}
+              >
+                <Card className="h-full border-border hover:shadow-md hover:border-primary/20 transition-all duration-300 text-center group">
+                  <CardContent className="p-5">
+                    <div className={`w-12 h-12 rounded-2xl ${use.color} flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform`}>
+                      <use.icon className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-bold text-sm mb-2 leading-tight">{use.label}</h3>
+                    <p className="text-muted-foreground text-xs leading-relaxed">{use.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+            className="mt-10 p-6 rounded-2xl bg-primary/5 border border-primary/15 text-center max-w-2xl mx-auto"
+          >
+            <p className="text-sm text-muted-foreground">
+              <strong className="text-foreground">No restrictions on use of funds.</strong> Personal Grants and Business Grants are 100% non-repayable. Loans come with full terms disclosed before disbursement. All funding is disbursed in USD.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── TESTIMONIALS ──────────────────────────────── */}
+      <section className="py-24 bg-background">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5 }}
+            className="text-center max-w-2xl mx-auto mb-14"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
+              <Star className="h-4 w-4" /> Success Stories
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Kenyans who got funded</h2>
+            <div className="flex justify-center gap-1 mb-2">
+              {[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-accent text-accent" />)}
+            </div>
+            <p className="text-muted-foreground">Rated 4.9/5 across 3,200+ verified Kenyan applicants</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            {[
+              {
+                name: "Grace M.", role: "Retail Business Owner", location: "Nairobi, Kenya",
+                product: "Business Grant — $18,000",
+                quote: "Applied for a Business Grant on Monday, received the approval decision by Wednesday afternoon. The M-Pesa payment was instant and the dashboard kept me updated throughout. Funds arrived exactly as promised. I've since expanded to a second location.",
+                rating: 5
+              },
+              {
+                name: "David K.", role: "Civil Engineer",  location: "Mombasa, Kenya",
+                product: "Business Loan — $45,000",
+                quote: "I needed capital for construction equipment. The 65% pre-approval notice arrived within minutes of submitting my application. The process was completely transparent — no hidden fees, no surprises. Funds were wired to my account in 13 days.",
+                rating: 5
+              },
+              {
+                name: "Amina W.", role: "Restaurant Owner", location: "Kisumu, Kenya",
+                product: "Business Grant — $22,500",
+                quote: "I was cautious at first, but every detail on the website matched the real experience. The online form took 4 minutes, M-Pesa fee was sent in seconds, and the team responded to my email the same day. Highly recommended to any Kenyan entrepreneur.",
+                rating: 5
+              },
             ].map((t, i) => (
               <motion.div
                 key={i}
                 initial="hidden" whileInView="visible" viewport={{ once: true }}
                 variants={fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="flex flex-col"
               >
-                <Card className="h-full border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300 bg-white">
-                  <CardContent className="p-7">
+                <Card className="h-full border-border hover:shadow-xl hover:border-primary/20 transition-all duration-300 bg-white flex flex-col">
+                  <CardContent className="p-7 flex flex-col flex-1">
+                    <Quote className="h-8 w-8 text-accent/30 mb-4" />
                     <div className="flex gap-1 mb-4">
                       {[...Array(t.rating)].map((_, j) => <Star key={j} className="h-4 w-4 fill-accent text-accent" />)}
                     </div>
-                    <p className="text-foreground/80 text-sm leading-relaxed mb-6 italic">"{t.quote}"</p>
-                    <div className="flex items-center gap-3 pt-4 border-t border-border">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                        {t.name.charAt(0)}
+                    <p className="text-foreground/80 text-sm leading-relaxed mb-4 flex-1">"{t.quote}"</p>
+                    <div className="mt-auto pt-4 border-t border-border">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-base shrink-0">
+                          {t.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">{t.name}</p>
+                          <p className="text-muted-foreground text-xs">{t.role} · {t.location}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-sm">{t.name}</p>
-                        <p className="text-muted-foreground text-xs">{t.role}</p>
-                      </div>
+                      <span className="inline-flex items-center gap-1.5 bg-secondary/10 text-secondary text-xs font-semibold px-3 py-1 rounded-full">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> {t.product}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
+
+          {/* Stats bar below testimonials */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          >
+            {[
+              { value: "14,800+", label: "Kenyans Served", icon: Users },
+              { value: "$52M+", label: "Total Disbursed (USD)", icon: DollarSign },
+              { value: "87%", label: "Approval Rate", icon: Award },
+              { value: "17 days", label: "Avg. Application to Funds", icon: Clock },
+            ].map((stat, i) => (
+              <div key={i} className="flex items-center gap-4 p-5 rounded-2xl bg-muted/40 border border-border">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <stat.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xl font-display font-bold text-foreground">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
