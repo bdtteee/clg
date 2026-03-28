@@ -4,6 +4,7 @@ import authRouter from "./auth.js";
 import applicationsRouter from "./applications.js";
 import notificationsRouter from "./notifications.js";
 import adminRouter from "./admin.js";
+import storageRouter from "./storage.js";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use("/auth", authRouter);
 router.use("/applications", applicationsRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/admin", adminRouter);
+router.use(storageRouter);
 
 export default router;

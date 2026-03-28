@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { Link } from "wouter"
 import { format } from "date-fns"
-import { Bell, FileText, PlusCircle, ArrowRight, Loader2, Info } from "lucide-react"
+import { Bell, FileText, PlusCircle, ArrowRight, Loader2, Info, AlertCircle, PlayCircle } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { getGetNotificationsQueryKey } from "@workspace/api-client-react"
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, paymentCode }: { status: string; paymentCode?: string | null }) {
+  if (status === 'pending' && !paymentCode) {
+    return <Badge className="bg-orange-100 text-orange-700 border border-orange-200">Incomplete</Badge>
+  }
   switch (status) {
     case 'approved': return <Badge variant="success">Approved</Badge>
     case 'rejected': return <Badge variant="destructive">Rejected</Badge>
@@ -25,12 +28,11 @@ export function UserDashboard() {
   const queryClient = useQueryClient()
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0
+  const incompleteCount = apps?.filter(a => a.status === 'pending' && !a.paymentCode).length || 0
 
   const handleRead = (id: number) => {
     markReadMut.mutate({ id }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() })
-      }
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() })
     })
   }
 
@@ -52,6 +54,16 @@ export function UserDashboard() {
         </Link>
       </div>
 
+      {incompleteCount > 0 && (
+        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-orange-600 shrink-0" />
+          <p className="text-sm text-orange-800 font-medium">
+            You have <strong>{incompleteCount}</strong> incomplete application{incompleteCount > 1 ? 's' : ''}.
+            Complete them below to submit for review.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content - Applications */}
         <div className="lg:col-span-2 space-y-6">
@@ -72,39 +84,57 @@ export function UserDashboard() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {apps.map(app => (
-                <Card key={app.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  {app.type === 'loan' && app.status !== 'rejected' && (
-                    <div className="bg-accent/10 px-6 py-2 border-b border-accent/20 flex justify-between items-center">
-                      <span className="text-xs font-bold text-accent-foreground tracking-wider uppercase">Pre-approval Status Active</span>
-                      <span className="text-sm font-bold text-primary">{formatCurrency(app.amountRequested * 0.65)} Guarantee</span>
-                    </div>
-                  )}
-                  <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground">APP-{app.id}</span>
-                        <StatusBadge status={app.status} />
+              {apps.map(app => {
+                const isIncomplete = app.status === 'pending' && !app.paymentCode
+                return (
+                  <Card key={app.id} className={`overflow-hidden hover:shadow-md transition-shadow ${isIncomplete ? 'border-orange-200' : ''}`}>
+                    {isIncomplete && (
+                      <div className="bg-orange-50 px-6 py-2 border-b border-orange-200 flex justify-between items-center">
+                        <span className="text-xs font-bold text-orange-700 tracking-wider uppercase flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" /> Action Required — Incomplete Application
+                        </span>
                       </div>
-                      <h3 className="text-lg font-bold capitalize">{app.category} {app.type}</h3>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        Applied on {format(new Date(app.createdAt), 'MMM d, yyyy')}
+                    )}
+                    {!isIncomplete && app.type === 'loan' && app.status !== 'rejected' && (
+                      <div className="bg-accent/10 px-6 py-2 border-b border-accent/20 flex justify-between items-center">
+                        <span className="text-xs font-bold text-accent-foreground tracking-wider uppercase">Pre-approval Status Active</span>
+                        <span className="text-sm font-bold text-primary">{formatCurrency(app.amountRequested * 0.65)} Guarantee</span>
+                      </div>
+                    )}
+                    <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground">APP-{app.id}</span>
+                          <StatusBadge status={app.status} paymentCode={app.paymentCode} />
+                        </div>
+                        <h3 className="text-lg font-bold capitalize">{app.category} {app.type}</h3>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Started on {format(new Date(app.createdAt), 'MMM d, yyyy')}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:items-end gap-2">
+                        <div className="text-2xl font-display font-bold text-foreground">
+                          {formatCurrency(app.amountRequested)}
+                        </div>
+                        {isIncomplete ? (
+                          <Link href={`/apply?resume=${app.id}`}>
+                            <Button size="sm" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700">
+                              <PlayCircle className="mr-2 h-4 w-4" /> Complete Now
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Link href={`/applications/${app.id}`}>
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                              View Details <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="flex flex-col sm:items-end gap-2">
-                      <div className="text-2xl font-display font-bold text-foreground">
-                        {formatCurrency(app.amountRequested)}
-                      </div>
-                      <Link href={`/applications/${app.id}`}>
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                          View Details <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                )
+              })}
             </div>
           )}
         </div>
@@ -123,14 +153,12 @@ export function UserDashboard() {
           <Card>
             <CardContent className="p-0 divide-y divide-border">
               {!notifications || notifications.length === 0 ? (
-                <div className="p-6 text-center text-muted-foreground text-sm">
-                  You're all caught up!
-                </div>
+                <div className="p-6 text-center text-muted-foreground text-sm">You're all caught up!</div>
               ) : (
                 notifications.map(n => (
-                  <div 
-                    key={n.id} 
-                    className={`p-4 transition-colors ${!n.read ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted/50'}`}
+                  <div
+                    key={n.id}
+                    className={`p-4 transition-colors cursor-pointer ${!n.read ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted/50'}`}
                     onClick={() => !n.read && handleRead(n.id)}
                   >
                     <div className="flex gap-3">

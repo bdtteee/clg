@@ -110,6 +110,7 @@ export const kycDocumentsTable = pgTable("kyc_documents", {
   documentType: text("document_type").notNull(),
   fileUrl: text("file_url"),
   filePath: text("file_path"),
+  fileName: text("file_name"),
   status: text("status").notNull().default("Pending"),
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

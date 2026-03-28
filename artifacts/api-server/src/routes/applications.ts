@@ -36,22 +36,9 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
 router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const {
-      type,
-      category,
-      amountRequested,
-      fullName,
-      email,
-      phoneNumber,
-      country,
-      reason,
-      purposeOfFunds,
-      nationalIdNumber,
-      employmentStatus,
-      monthlyIncome,
-      businessName,
-      registrationNumber,
-      kraPin,
-      annualRevenue,
+      type, category, amountRequested, fullName, email, phoneNumber,
+      country, reason, purposeOfFunds, nationalIdNumber, employmentStatus,
+      monthlyIncome, businessName, registrationNumber, kraPin, annualRevenue,
     } = req.body;
 
     const purposeText = purposeOfFunds || reason;
@@ -68,31 +55,20 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
       .insert(applicationsTable)
       .values({
         userId: req.userId!,
-        type,
-        category,
-        fullName,
-        email,
-        phoneNumber,
+        type, category, fullName, email, phoneNumber,
         country: country || "Kenya",
         reason: purposeText,
         amountRequested: parseFloat(amountRequested).toFixed(2),
         preapprovedAmount,
         status: "pending",
-        nationalIdNumber,
-        employmentStatus,
+        nationalIdNumber, employmentStatus,
         monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome).toFixed(2) : null,
-        businessName,
-        registrationNumber,
-        kraPin,
+        businessName, registrationNumber, kraPin,
         annualRevenue: annualRevenue ? parseFloat(annualRevenue).toFixed(2) : null,
       })
       .returning();
 
-    await db.insert(notificationsTable).values({
-      userId: req.userId!,
-      message: `Your ${category} ${type} application #${app.id} has been received and is under review.`,
-      read: false,
-    });
+    // No notification sent here — only sent after payment is submitted
 
     res.status(201).json({
       ...app,
@@ -110,26 +86,15 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
 router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const id = parseInt(req.params.id as string);
-    if (isNaN(id)) {
-      res.status(400).json({ error: "Invalid application ID" });
-      return;
-    }
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid application ID" }); return; }
 
     const [app] = await db
       .select()
       .from(applicationsTable)
-      .where(
-        and(
-          eq(applicationsTable.id, id),
-          eq(applicationsTable.userId, req.userId!)
-        )
-      )
+      .where(and(eq(applicationsTable.id, id), eq(applicationsTable.userId, req.userId!)))
       .limit(1);
 
-    if (!app) {
-      res.status(404).json({ error: "Application not found" });
-      return;
-    }
+    if (!app) { res.status(404).json({ error: "Application not found" }); return; }
 
     res.json({
       ...app,
@@ -147,46 +112,29 @@ router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
 router.post("/:id/payment", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const id = parseInt(req.params.id as string);
-    if (isNaN(id)) {
-      res.status(400).json({ error: "Invalid application ID" });
-      return;
-    }
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid application ID" }); return; }
 
     const { paymentCode } = req.body;
-    if (!paymentCode || !paymentCode.trim()) {
-      res.status(400).json({ error: "Payment code is required" });
-      return;
-    }
+    if (!paymentCode?.trim()) { res.status(400).json({ error: "Payment code is required" }); return; }
 
     const [existing] = await db
       .select()
       .from(applicationsTable)
-      .where(
-        and(
-          eq(applicationsTable.id, id),
-          eq(applicationsTable.userId, req.userId!)
-        )
-      )
+      .where(and(eq(applicationsTable.id, id), eq(applicationsTable.userId, req.userId!)))
       .limit(1);
 
-    if (!existing) {
-      res.status(404).json({ error: "Application not found" });
-      return;
-    }
+    if (!existing) { res.status(404).json({ error: "Application not found" }); return; }
 
     const [app] = await db
       .update(applicationsTable)
-      .set({
-        paymentCode: paymentCode.trim(),
-        status: "under_review",
-        updatedAt: new Date(),
-      })
+      .set({ paymentCode: paymentCode.trim(), status: "under_review", updatedAt: new Date() })
       .where(eq(applicationsTable.id, id))
       .returning();
 
+    // Notify user that application is now under review — only after payment
     await db.insert(notificationsTable).values({
       userId: req.userId!,
-      message: `Payment received for application #${app.id}. Your application is now under review. Expected response in 2–3 business days.`,
+      message: `Your ${app.category} ${app.type} application #${app.id} is now complete and under review. Expected response in 2–3 business days.`,
       read: false,
     });
 
@@ -207,28 +155,17 @@ router.post("/:id/payment", requireAuth, async (req: AuthenticatedRequest, res) 
 router.get("/:id/kyc-documents", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const id = parseInt(req.params.id as string);
-    if (isNaN(id)) {
-      res.status(400).json({ error: "Invalid application ID" });
-      return;
-    }
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid application ID" }); return; }
 
-    // Verify the application belongs to this user
     const [app] = await db
       .select()
       .from(applicationsTable)
       .where(and(eq(applicationsTable.id, id), eq(applicationsTable.userId, req.userId!)))
       .limit(1);
 
-    if (!app) {
-      res.status(404).json({ error: "Application not found" });
-      return;
-    }
+    if (!app) { res.status(404).json({ error: "Application not found" }); return; }
 
-    const docs = await db
-      .select()
-      .from(kycDocumentsTable)
-      .where(eq(kycDocumentsTable.applicationId, id));
-
+    const docs = await db.select().from(kycDocumentsTable).where(eq(kycDocumentsTable.applicationId, id));
     res.json(docs);
   } catch (error) {
     console.error("Get KYC documents error:", error);
@@ -240,22 +177,15 @@ router.get("/:id/kyc-documents", requireAuth, async (req: AuthenticatedRequest, 
 router.post("/:id/kyc-documents", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const id = parseInt(req.params.id as string);
-    if (isNaN(id)) {
-      res.status(400).json({ error: "Invalid application ID" });
-      return;
-    }
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid application ID" }); return; }
 
-    // Verify the application belongs to this user
     const [app] = await db
       .select()
       .from(applicationsTable)
       .where(and(eq(applicationsTable.id, id), eq(applicationsTable.userId, req.userId!)))
       .limit(1);
 
-    if (!app) {
-      res.status(404).json({ error: "Application not found" });
-      return;
-    }
+    if (!app) { res.status(404).json({ error: "Application not found" }); return; }
 
     const { documents } = req.body;
     if (!documents || !Array.isArray(documents)) {
@@ -263,10 +193,8 @@ router.post("/:id/kyc-documents", requireAuth, async (req: AuthenticatedRequest,
       return;
     }
 
-    // Delete existing docs for this application and re-insert
-    await db
-      .delete(kycDocumentsTable)
-      .where(eq(kycDocumentsTable.applicationId, id));
+    // Replace all docs for this application
+    await db.delete(kycDocumentsTable).where(eq(kycDocumentsTable.applicationId, id));
 
     const inserted = [];
     for (const doc of documents) {
@@ -278,6 +206,7 @@ router.post("/:id/kyc-documents", requireAuth, async (req: AuthenticatedRequest,
           applicationId: id,
           documentType: doc.documentType,
           fileUrl: doc.fileUrl || null,
+          fileName: doc.fileName || null,
           status: doc.fileUrl ? "Pending" : "Not Uploaded",
         })
         .returning();
