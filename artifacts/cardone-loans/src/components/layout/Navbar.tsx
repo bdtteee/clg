@@ -1,8 +1,8 @@
 import { Link, useLocation } from "wouter"
 import { Button } from "@/components/ui/button"
 import { useGetMe, useLogout } from "@workspace/api-client-react"
-import { Building2, Menu, X, ChevronRight, ChevronDown } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { Building2, Menu, X, ChevronRight } from "lucide-react"
+import { useState, useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { getGetMeQueryKey } from "@workspace/api-client-react"
 
@@ -13,23 +13,11 @@ export function Navbar() {
   const queryClient = useQueryClient()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [productsOpen, setProductsOpen] = useState(false)
-  const productsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (productsRef.current && !productsRef.current.contains(e.target as Node)) {
-        setProductsOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
   }, [])
 
   const isHome = location === "/"
@@ -53,10 +41,21 @@ export function Navbar() {
     ? "text-white/80 hover:text-white"
     : "text-muted-foreground hover:text-primary"
 
+  const navLinks = [
+    { href: "/about", label: "About" },
+    { href: "/loans", label: "Loans" },
+    { href: "/grants", label: "Grants" },
+    { href: "/how-it-works", label: "How It Works" },
+    { href: "/faq", label: "FAQ" },
+    { href: "/contact", label: "Contact" },
+  ]
+
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 w-full border-b transition-all duration-300 ${navClass}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
+
+          {/* Logo */}
           <div className="flex shrink-0 items-center">
             <Link href="/" onClick={closeMenu} className="flex items-center gap-2.5 group">
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-lg group-hover:scale-105 transition-transform ${isHome && !scrolled ? "bg-white/15 text-white" : "bg-primary text-white"}`}>
@@ -73,34 +72,21 @@ export function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden md:flex md:items-center md:space-x-7">
-            <Link href="/about" className={`text-sm font-medium transition-colors ${linkClass}`}>About</Link>
-
-            {/* Products Dropdown */}
-            <div className="relative" ref={productsRef}>
-              <button
-                onClick={() => setProductsOpen(!productsOpen)}
-                className={`flex items-center gap-1 text-sm font-medium transition-colors ${linkClass}`}
+          {/* Desktop nav */}
+          <div className="hidden md:flex md:items-center md:gap-6">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors ${linkClass} ${
+                  (location === link.href || location.startsWith(link.href + "/"))
+                    ? isHome && !scrolled ? "text-white font-semibold" : "text-primary font-semibold"
+                    : ""
+                }`}
               >
-                Products <ChevronDown className={`h-3.5 w-3.5 transition-transform ${productsOpen ? "rotate-180" : ""}`} />
-              </button>
-              {productsOpen && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-52 bg-white border border-border rounded-2xl shadow-xl p-2 z-50">
-                  <Link href="/loans" onClick={() => setProductsOpen(false)} className="block px-4 py-3 rounded-xl hover:bg-muted text-sm font-medium text-foreground transition-colors">
-                    💼 Loans
-                    <span className="block text-xs text-muted-foreground font-normal mt-0.5">$10K – $100K USD</span>
-                  </Link>
-                  <Link href="/grants" onClick={() => setProductsOpen(false)} className="block px-4 py-3 rounded-xl hover:bg-muted text-sm font-medium text-foreground transition-colors">
-                    🎁 Grants
-                    <span className="block text-xs text-muted-foreground font-normal mt-0.5">$2K – $30K USD · Non-repayable</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <Link href="/how-it-works" className={`text-sm font-medium transition-colors ${linkClass}`}>How It Works</Link>
-            <Link href="/faq" className={`text-sm font-medium transition-colors ${linkClass}`}>FAQ</Link>
-            <Link href="/contact" className={`text-sm font-medium transition-colors ${linkClass}`}>Contact</Link>
+                {link.label}
+              </Link>
+            ))}
 
             {isLoading ? (
               <div className="h-9 w-24 animate-pulse rounded-lg bg-white/10" />
@@ -128,10 +114,7 @@ export function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <Link
-                  href="/login"
-                  className={`text-sm font-medium transition-colors ${linkClass}`}
-                >
+                <Link href="/login" className={`text-sm font-medium transition-colors ${linkClass}`}>
                   Log in
                 </Link>
                 <Link href="/register">
@@ -149,6 +132,7 @@ export function Navbar() {
             )}
           </div>
 
+          {/* Mobile hamburger */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className={`flex items-center justify-center rounded-lg p-2 md:hidden ${isHome && !scrolled ? "text-white hover:bg-white/10" : "text-foreground hover:bg-muted"}`}
@@ -158,15 +142,24 @@ export function Navbar() {
         </div>
       </div>
 
+      {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-background border-b border-border shadow-xl">
           <div className="space-y-1 px-4 pb-6 pt-4">
-            <Link href="/about" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">About Us</Link>
-            <Link href="/loans" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Loans ($10K–$100K)</Link>
-            <Link href="/grants" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Grants ($2K–$30K)</Link>
-            <Link href="/how-it-works" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">How It Works</Link>
-            <Link href="/faq" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">FAQ</Link>
-            <Link href="/contact" onClick={closeMenu} className="block rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted">Contact</Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={closeMenu}
+                className={`block rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+                  location === link.href
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
 
             <div className="mt-4 pt-4 border-t border-border space-y-3">
               {user ? (

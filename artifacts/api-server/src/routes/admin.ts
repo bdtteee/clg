@@ -369,6 +369,37 @@ router.post(
   }
 );
 
+router.get("/users", requireAdmin, async (_req: AuthenticatedRequest, res) => {
+  try {
+    const users = await db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        fullName: usersTable.fullName,
+        role: usersTable.role,
+        createdAt: usersTable.createdAt,
+      })
+      .from(usersTable)
+      .orderBy(desc(usersTable.createdAt));
+
+    const appCounts = await db
+      .select({
+        userId: applicationsTable.userId,
+        count: count(),
+      })
+      .from(applicationsTable)
+      .groupBy(applicationsTable.userId);
+
+    const countMap: Record<number, number> = {};
+    appCounts.forEach((r) => { countMap[r.userId] = Number(r.count); });
+
+    res.json(users.map((u) => ({ ...u, applicationCount: countMap[u.id] ?? 0 })));
+  } catch (error) {
+    console.error("Admin get users error:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
 router.get("/stats", requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const allApps = await db
