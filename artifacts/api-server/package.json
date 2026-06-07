@@ -17,6 +17,7 @@
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
+    "express-session": "^1.19.0",
     "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.2",
     "zod": "catalog:"
@@ -26,6 +27,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "catalog:",
     "esbuild": "^0.27.3",

@@ -1,45 +1,46 @@
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
+import express, { type Express } from "express";
 import cors from "cors";
-import cookieParser from "cookie-parser";
-import path from "path";
+import session from "express-session";
 import router from "./routes/index.js";
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
+}
 
 const app: Express = express();
 
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean) as string[]
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) return cb(null, true)
+    cb(new Error(`CORS: ${origin} not allowed`))
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "cardone-loans-secret-2024",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    },
+  })
+);
 
 app.use("/api", router);
-
-// 404 handler for unmatched API routes
-app.use("/api/{*path}", (_req: Request, res: Response) => {
-  res.status(404).json({ error: "API endpoint not found" });
-});
-
-// Global error handler — prevents unhandled errors from crashing the process
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("[API Error]", err.message, err.stack);
-  const status = (err as { status?: number }).status ?? 500;
-  res.status(status).json({
-    error: process.env.NODE_ENV === "production" ? "Internal server error" : err.message,
-  });
-});
-
-if (process.env.NODE_ENV === "production") {
-  const staticDir =
-    process.env.STATIC_DIR ||
-    path.resolve(process.cwd(), "artifacts/cardone-loans/dist/public");
-  app.use(express.static(staticDir));
-  app.get("/{*path}", (_req, res) => {
-    res.sendFile(path.join(staticDir, "index.html"));
-  });
-}
 
 export default app;
