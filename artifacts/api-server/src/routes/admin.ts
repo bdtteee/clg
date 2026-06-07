@@ -8,10 +8,26 @@ import {
   manualPaymentsTable,
   kycDocumentsTable,
 } from "@workspace/db/schema";
-import { eq, count, desc } from "drizzle-orm";
+import { eq, count, desc, isNotNull } from "drizzle-orm";
 import { requireAdmin, AuthenticatedRequest } from "../middlewares/auth.js";
 
 const router = Router();
+
+function parseApp(
+  app: typeof applicationsTable.$inferSelect,
+  user?: { email: string; fullName: string },
+) {
+  return {
+    ...app,
+    amountRequested: parseFloat(app.amountRequested),
+    preapprovedAmount: app.preapprovedAmount ? parseFloat(app.preapprovedAmount) : null,
+    monthlyIncome: app.monthlyIncome ? parseFloat(app.monthlyIncome) : null,
+    annualRevenue: app.annualRevenue ? parseFloat(app.annualRevenue) : null,
+    approvedAmount: app.approvedAmount ? parseFloat(app.approvedAmount) : null,
+    userEmail: user?.email,
+    userFullName: user?.fullName,
+  };
+}
 
 router.get("/applications", requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
@@ -300,74 +316,62 @@ router.patch(
   }
 );
 
+// List all applications that have submitted a payment (admin payment review queue)
 router.get("/payments", requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
-    const payments = await db
-      .select()
-      .from(manualPaymentsTable)
-      .orderBy(desc(manualPaymentsTable.createdAt));
-
-    res.json(
-      payments.map((p) => ({
-        ...p,
-        amountKes: parseFloat(p.amountKes),
-      }))
-    );
+    const rows = await db
+      .select({ app: applicationsTable, user: { email: usersTable.email, fullName: usersTable.fullName } })
+      .from(applicationsTable)
+      .innerJoin(usersTable, eq(applicationsTable.userId, usersTable.id))
+      .where(isNotNull(applicationsTable.paymentCode))
+      .orderBy(desc(applicationsTable.createdAt));
+    res.json(rows.map(({ app, user }) => parseApp(app, user)));
   } catch (error) {
     console.error("Admin get payments error:", error);
     res.status(500).json({ error: "Failed to fetch payments" });
   }
 });
 
-router.post(
-  "/payments/:id/verify",
-  requireAdmin,
-  async (req: AuthenticatedRequest, res) => {
-    try {
-      const id = parseInt(req.params.id as string);
-      if (isNaN(id)) {
-        res.status(400).json({ error: "Invalid payment ID" });
-        return;
-      }
+// Verify (approve) or reject a submitted payment
+router.post("/payments/:id/verify", requireAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const id = parseInt(String(req.params.id));
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid application ID" }); return; }
 
-      const [payment] = await db
-        .update(manualPaymentsTable)
-        .set({
-          isVerified: true,
-          verifiedBy: req.userId!,
-          updatedAt: new Date(),
-        })
-        .where(eq(manualPaymentsTable.id, id))
-        .returning();
-
-      if (!payment) {
-        res.status(404).json({ error: "Payment not found" });
-        return;
-      }
-
-      if (payment.applicationId) {
-        const [app] = await db
-          .update(applicationsTable)
-          .set({ status: "under_review", updatedAt: new Date() })
-          .where(eq(applicationsTable.id, payment.applicationId))
-          .returning();
-
-        if (app) {
-          await db.insert(notificationsTable).values({
-            userId: payment.userId,
-            message: `Your M-Pesa payment of KES ${parseFloat(payment.amountKes).toLocaleString()} for application #${payment.applicationId} has been verified. Your application is now under review.`,
-            read: false,
-          });
-        }
-      }
-
-      res.json({ ...payment, amountKes: parseFloat(payment.amountKes) });
-    } catch (error) {
-      console.error("Verify payment error:", error);
-      res.status(500).json({ error: "Failed to verify payment" });
+    const { action, comment } = req.body;
+    if (!["approve", "reject"].includes(action)) {
+      res.status(400).json({ error: "action must be 'approve' or 'reject'" }); return;
     }
+
+    const [existing] = await db.select().from(applicationsTable).where(eq(applicationsTable.id, id)).limit(1);
+    if (!existing) { res.status(404).json({ error: "Application not found" }); return; }
+
+    const updates =
+      action === "approve"
+        ? { status: "under_review" as const, updatedAt: new Date() }
+        : { adminComment: comment || "Payment could not be verified.", updatedAt: new Date() };
+
+    const [updated] = await db
+      .update(applicationsTable)
+      .set(updates)
+      .where(eq(applicationsTable.id, id))
+      .returning();
+
+    await db.insert(notificationsTable).values({
+      userId: existing.userId,
+      message:
+        action === "approve"
+          ? `Your processing fee payment for application #${id} has been verified. Your application is now under expert review.`
+          : `Your processing fee payment for application #${id} could not be verified. Reason: ${comment || "Payment verification failed"}. Please contact info@cardoneloansgrants.org.`,
+      read: false,
+    });
+
+    res.json(parseApp(updated));
+  } catch (error) {
+    console.error("Payment verify error:", error);
+    res.status(500).json({ error: "Failed to process payment verification" });
   }
-);
+});
 
 router.get("/users", requireAdmin, async (_req: AuthenticatedRequest, res) => {
   try {
