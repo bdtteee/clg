@@ -13,12 +13,40 @@ services:
         value: production
       - key: PORT
         value: 10000
+
+      # ── Database (Supabase PostgreSQL) ──────────────────────────────────────────────────
+      # Use the Session Mode (port 5432) pooler URL from Supabase > Settings > Database
       - key: DATABASE_URL
         sync: false
+      # Supabase transaction-mode pooler (port 6543) — used at runtime
+      - key: POSTGRES_URL
+        sync: false
+      # Supabase direct connection (port 5432) — used for migrations only
+      - key: POSTGRES_URL_NON_POOLING
+        sync: false
+
+      # ── Supabase ────────────────────────────────────────────────────────────────────
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # From Supabase > Settings > API > JWT Settings > JWT Secret
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+
+      # ── Auth / Session ────────────────────────────────────────────────────────────────
+      # Fallback signing secret when SUPABASE_JWT_SECRET is not set
       - key: SESSION_SECRET
         generateValue: true
+
+      # ── CORS ────────────────────────────────────────────────────────────────────
+      # Set to your Vercel frontend URL, e.g. https://your-app.vercel.app
       - key: FRONTEND_URL
         sync: false
+
+      # ── SMTP (email notifications) ──────────────────────────────────────────────────
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -31,6 +59,8 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+
+      # ── M-Pesa ──────────────────────────────────────────────────────────────────────────
       - key: MPESA_CONSUMER_KEY
         sync: false
       - key: MPESA_CONSUMER_SECRET
@@ -39,6 +69,7 @@ services:
         value: "4167853"
       - key: MPESA_PASSKEY
         sync: false
+      # e.g. https://cardone-loans-api.onrender.com/api/payments/mpesa/callback
       - key: MPESA_CALLBACK_URL
         sync: false
       - key: MPESA_ENV
