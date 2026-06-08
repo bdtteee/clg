@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     rootDir: .
-    buildCommand: npm install -g pnpm@9 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
+    buildCommand: npm install -g pnpm@latest && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
     startCommand: node artifacts/api-server/dist/index.cjs
     healthCheckPath: /api/healthz
     envVars:
