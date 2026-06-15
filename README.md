@@ -45,6 +45,8 @@ e‑mail/in‑app notifications, and a full admin back‑office.
 - **Instant 85% pre‑approval** — every submitted loan **or grant** receives an 85% pre‑approval of the requested amount.
 - **Processing fee via M‑Pesa STK Push** — the applicant is prompted on their phone and the app auto‑advances on payment; manual Paybill code entry remains a fallback. The **account name shown is the applicant's name**.
 - **Auto‑migrating schema** — the API applies an idempotent schema sync on every boot, so no manual migration step is required before a deploy.
+- **Country selection** — applicants choose their country during the application.
+- **Input & upload hardening** — server‑side upload allow‑list (JPG/PNG/PDF, ≤10 MB), object‑path traversal guards, string length caps, and email/amount validation across the write endpoints.
 - **Payout accounts** — users save reusable bank accounts for disbursement.
 - **Withdrawals** — users request withdrawals to a chosen payout account; admins approve / reject / mark paid.
 - **Notifications** — in‑app notifications at every status change.
@@ -236,10 +238,10 @@ Admins sign in at `/admin-login` and land on `/admin`.
 `/apply` is a 6‑step wizard:
 
 1. **Select** — choose Personal/Business Loan or Grant.
-2. **Details** — amount, contact, ID/business info, purpose, optional business plan.
+2. **Details** — amount, contact, **country**, ID/business info, purpose, optional business plan.
 3. **Documents** — KYC (personal) or KYB (business) uploads. Files upload directly to Supabase Storage via signed URLs and are reviewable by admins.
 4. **Payout / Bank details** — add/select the bank account for disbursement (reused later for withdrawals).
-5. **Payment** — pay the processing fee via **M‑Pesa STK Push** (a prompt is sent to the phone; the app auto‑advances once paid), or manually via Paybill **4167853**, Account = `APP-<id>`, then enter the confirmation code. The **Account Name displayed is the applicant's full name**.
+5. **Payment** — pay the processing fee via **M‑Pesa STK Push** (a prompt is sent to the phone; the app auto‑advances once paid), or manually via Paybill **4167853**. The **payment reference / account name is the applicant's full name**, then enter the confirmation code.
 6. **Done** — application is under review with an **85% pre‑approval** shown.
 
 On submission every application (loan **and** grant) is stored with

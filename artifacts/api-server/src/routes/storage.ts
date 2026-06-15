@@ -2,6 +2,12 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth.js";
+import {
+  ALLOWED_UPLOAD_TYPES,
+  ALLOWED_UPLOAD_EXTENSIONS,
+  MAX_UPLOAD_BYTES,
+  isSafeObjectPath,
+} from "../lib/validate.js";
 
 const router: IRouter = Router();
 
@@ -16,9 +22,9 @@ const supabaseHeaders = {
 };
 
 const RequestUploadUrlBody = z.object({
-  name: z.string(),
-  size: z.number(),
-  contentType: z.string(),
+  name: z.string().min(1).max(255),
+  size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
+  contentType: z.string().min(1).max(127),
 });
 
 /**
@@ -34,9 +40,22 @@ router.post("/storage/uploads/request-url", requireAuth, async (req: Authenticat
 
   const { name, size, contentType } = parsed.data;
 
+  if (!ALLOWED_UPLOAD_TYPES.has(contentType.toLowerCase())) {
+    res.status(415).json({ error: "Unsupported file type. Upload a JPG, PNG, or PDF." });
+    return;
+  }
+  if (size > MAX_UPLOAD_BYTES) {
+    res.status(413).json({ error: "File too large. Maximum size is 10 MB." });
+    return;
+  }
+  const ext = name.includes(".") ? (name.split(".").pop() || "").toLowerCase() : "";
+  if (!ALLOWED_UPLOAD_EXTENSIONS.has(ext)) {
+    res.status(415).json({ error: "Unsupported file. Allowed: JPG, PNG, PDF." });
+    return;
+  }
+
   try {
-    const ext = name.includes(".") ? name.split(".").pop() : "";
-    const objectPath = `uploads/${randomUUID()}${ext ? `.${ext}` : ""}`;
+    const objectPath = `uploads/${randomUUID()}.${ext}`;
 
     // Create a signed upload URL via Supabase Storage API
     const response = await fetch(
@@ -84,6 +103,11 @@ router.get("/storage/objects/*path", requireAuth, async (req: AuthenticatedReque
   try {
     const raw = req.params.path;
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
+
+    if (!isSafeObjectPath(wildcardPath)) {
+      res.status(400).json({ error: "Invalid object path" });
+      return;
+    }
 
     // Generate a signed download URL (valid for 1 hour)
     const response = await fetch(

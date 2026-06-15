@@ -10,20 +10,26 @@ import {
   clearAuthCookie,
   requireAuth,
 } from "../middlewares/auth.js";
+import { cleanString, isEmail } from "../lib/validate.js";
 
 const router = Router();
 
 router.post("/register", async (req: AuthenticatedRequest, res) => {
   try {
-    const { email, password, fullName } = req.body;
+    const email = cleanString(req.body.email, 254)?.toLowerCase();
+    const fullName = cleanString(req.body.fullName, 120);
+    const password = typeof req.body.password === "string" ? req.body.password : "";
 
     if (!email || !password || !fullName) {
       res.status(400).json({ error: "Email, password, and full name are required" });
       return;
     }
-
-    if (password.length < 6) {
-      res.status(400).json({ error: "Password must be at least 6 characters" });
+    if (!isEmail(email)) {
+      res.status(400).json({ error: "Enter a valid email address" });
+      return;
+    }
+    if (password.length < 6 || password.length > 200) {
+      res.status(400).json({ error: "Password must be 6–200 characters" });
       return;
     }
 
@@ -71,7 +77,8 @@ router.post("/register", async (req: AuthenticatedRequest, res) => {
 
 router.post("/login", async (req: AuthenticatedRequest, res) => {
   try {
-    const { email, password } = req.body;
+    const email = cleanString(req.body.email, 254)?.toLowerCase();
+    const password = typeof req.body.password === "string" ? req.body.password : "";
 
     if (!email || !password) {
       res.status(400).json({ error: "Email and password are required" });
