@@ -12,16 +12,55 @@ declare module "express-session" {
 
 const app: Express = express();
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "http://localhost:5173",
-  "http://localhost:3000",
-].filter(Boolean) as string[]
+const isProduction = process.env.NODE_ENV === "production";
+
+// Trust the TLS-terminating proxy in front of the app (Vercel / Render).
+// Required so that `secure` cookies are issued and X-Forwarded-Proto is honored.
+app.set("trust proxy", 1);
+
+// Known production frontends. Additional origins can be supplied via the
+// FRONTEND_URL env var (comma-separated). Any *.vercel.app deployment and the
+// local dev servers are always permitted.
+const productionOrigins = [
+  "https://cardoneloansgrants.org",
+  "https://www.cardoneloansgrants.org",
+];
+
+const devOrigins = ["http://localhost:5173", "http://localhost:3000"];
+
+const configuredOrigins = (process.env.FRONTEND_URL ?? "")
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
+const allowedOrigins = new Set<string>([
+  ...configuredOrigins,
+  ...productionOrigins,
+  ...devOrigins,
+]);
+
+function isAllowedOrigin(origin: string): boolean {
+  const normalized = origin.replace(/\/$/, "");
+  if (allowedOrigins.has(normalized)) return true;
+  try {
+    const { hostname } = new URL(normalized);
+    // Allow Vercel preview and production deployments.
+    if (hostname === "vercel.app" || hostname.endsWith(".vercel.app")) return true;
+  } catch {
+    /* malformed origin — fall through to deny */
+  }
+  return false;
+}
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) return cb(null, true)
-    cb(new Error(`CORS: ${origin} not allowed`))
+    // Requests without an Origin header (same-origin navigations, curl,
+    // server-to-server) are always allowed.
+    if (!origin) return cb(null, true);
+    if (isAllowedOrigin(origin)) return cb(null, true);
+    // Deny by withholding CORS headers rather than throwing: a thrown error
+    // becomes an opaque 500 that the browser reports as "Failed to fetch".
+    return cb(null, false);
   },
   credentials: true,
 }));
@@ -35,10 +74,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: isProduction ? "none" : "lax",
     },
   })
 );

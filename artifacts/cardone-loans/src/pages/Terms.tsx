@@ -122,7 +122,7 @@ Phone: +1 254-528-9454`
 export default function Terms() {
   useSEO({
     title: "Terms & Conditions | Cardone Loans & Grants",
-    description: "Read the Terms and Conditions governing your use of Cardone Loans & Grants services, loan and grant applications, M-Pesa fee payments, and disbursements.",
+    description: "Read the Terms and Conditions governing your use of Cardone Loans & Grants services, loan and grant applications, processing fee payments via M-Pesa, and disbursements.",
     canonical: "/terms",
     keywords: "Cardone loans terms, loan terms Kenya, grant terms conditions Kenya",
   })

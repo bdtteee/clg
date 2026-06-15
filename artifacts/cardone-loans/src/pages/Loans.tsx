@@ -20,7 +20,7 @@ const personalLoanFeatures = [
   "Disbursement within 14 days of approval",
   "Valid National ID required",
   "Employment or income proof required",
-  "M-Pesa processing fee: KES 2,600 (~$20)",
+  "Processing fee processed through M-Pesa: KES 2,600 (~$20)",
 ]
 
 const businessLoanFeatures = [
@@ -32,7 +32,7 @@ const businessLoanFeatures = [
   "Disbursement within 14 days of approval",
   "Business registration + KRA PIN required",
   "Annual revenue statement required",
-  "M-Pesa processing fee: KES 6,500 (~$50)",
+  "Processing fee processed through M-Pesa: KES 6,500 (~$50)",
 ]
 
 const eligibilityPersonal = [
@@ -54,7 +54,7 @@ const eligibilityBusiness = [
 ]
 
 const faqs = [
-  { q: "What is the 65% pre-qualification?", a: "Upon submission, our automated system immediately issues a binding pre-qualification at 65% of your requested loan amount. For example, a $30,000 application instantly qualifies for $19,500 pending final underwriting. This is confirmed to you before the M-Pesa fee is requested." },
+  { q: "What is the 65% pre-qualification?", a: "Upon submission, our automated system immediately issues a binding pre-qualification at 65% of your requested loan amount. For example, a $30,000 application instantly qualifies for $19,500 pending final underwriting. This is confirmed to you before the processing fee processed through M-Pesa is requested." },
   { q: "Are there collateral requirements?", a: "No. Our U.S.-based funding partners do not require Kenyan collateral. Applications are assessed based on your submitted information, income, and business details." },
   { q: "When exactly will funds be disbursed?", a: "Funds are disbursed within 14 calendar days of your application being approved. Disbursement is made in USD directly to your nominated bank account or mobile money account." },
   { q: "Can I apply for more than one loan?", a: "Applicants may not have more than one active loan application at a time. Once a prior loan is fully settled, you may reapply for a new facility." },
@@ -147,7 +147,7 @@ export default function Loans() {
                       <p className="font-bold text-lg">$10,000 – $50,000</p>
                     </div>
                     <div className="bg-accent/10 rounded-xl p-4 border border-accent/20">
-                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">M-Pesa Fee</p>
+                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">Processing Fee Processed Through M-Pesa</p>
                       <p className="font-bold text-lg text-accent-foreground">KES 2,600</p>
                     </div>
                   </div>
@@ -191,7 +191,7 @@ export default function Loans() {
                       <p className="font-bold text-lg">$20,000 – $100,000</p>
                     </div>
                     <div className="bg-accent/10 rounded-xl p-4 border border-accent/20">
-                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">M-Pesa Fee</p>
+                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">Processing Fee Processed Through M-Pesa</p>
                       <p className="font-bold text-lg text-accent-foreground">KES 6,500</p>
                     </div>
                   </div>
@@ -273,7 +273,7 @@ export default function Loans() {
             {[
               { step: "01", icon: User, title: "Create Account", desc: "Register with your email and basic details. Free and takes under 2 minutes." },
               { step: "02", icon: DollarSign, title: "Submit Application", desc: "Complete your loan application with personal or business details and your desired amount." },
-              { step: "03", icon: Smartphone, title: "Pay Processing Fee", desc: "Send the M-Pesa fee to Paybill 4167853. Your application immediately moves to underwriting." },
+              { step: "03", icon: Smartphone, title: "Pay Processing Fee", desc: "Send the processing fee (processed through M-Pesa) to Paybill 4167853. Your application immediately moves to underwriting." },
               { step: "04", icon: TrendingUp, title: "Receive Funds", desc: "Approval in 2–3 days. Funds disbursed in USD within 14 days directly to your account." },
             ].map((s, i) => (
               <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ delay: i * 0.1 }} className="text-center">

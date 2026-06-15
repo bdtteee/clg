@@ -199,7 +199,7 @@ export default function Home() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-white/5 rounded-xl p-4 border border-white/10"><p className="text-white/50 text-xs font-medium mb-1 uppercase tracking-wider">USD Amount</p><p className="font-bold text-base text-white">{product.range}</p></div>
-                      <div className="bg-white/5 rounded-xl p-4 border border-white/10"><p className="text-white/50 text-xs font-medium mb-1 uppercase tracking-wider">M-Pesa Fee</p><p className="font-bold text-base text-accent">{product.fee}</p></div>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10"><p className="text-white/50 text-xs font-medium mb-1 uppercase tracking-wider">Processing Fee Processed Through M-Pesa</p><p className="font-bold text-base text-accent">{product.fee}</p></div>
                     </div>
                     <ul className="space-y-2">{product.features.map((f, j) => <li key={j} className="flex items-center gap-2 text-sm text-white/70"><CheckCircle2 className="h-4 w-4 text-secondary shrink-0" />{f}</li>)}</ul>
                   </CardContent>
@@ -285,7 +285,7 @@ export default function Home() {
             {[
               { name: "Grace M.", role: "Retail Business Owner", location: "Nairobi, Kenya", product: "Business Grant — $18,000", quote: "Applied for a Business Grant on Monday, received the approval decision by Wednesday afternoon. The M-Pesa payment was instant and the dashboard kept me updated throughout. Funds arrived exactly as promised. I've since expanded to a second location.", rating: 5 },
               { name: "David K.", role: "Civil Engineer", location: "Mombasa, Kenya", product: "Business Loan — $45,000", quote: "I needed capital for construction equipment. The 65% pre-approval notice arrived within minutes of submitting my application. The process was completely transparent — no hidden fees, no surprises. Funds were wired to my account in 13 days.", rating: 5 },
-              { name: "Amina W.", role: "Restaurant Owner", location: "Kisumu, Kenya", product: "Business Grant — $22,500", quote: "I was cautious at first, but every detail on the website matched the real experience. The online form took 4 minutes, M-Pesa fee was sent in seconds, and the team responded to my email the same day. Highly recommended to any African entrepreneur.", rating: 5 },
+              { name: "Amina W.", role: "Restaurant Owner", location: "Kisumu, Kenya", product: "Business Grant — $22,500", quote: "I was cautious at first, but every detail on the website matched the real experience. The online form took 4 minutes, the processing fee was sent in seconds, and the team responded to my email the same day. Highly recommended to any African entrepreneur.", rating: 5 },
             ].map((t, i) => (
               <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }} className="flex flex-col">
                 <Card className="h-full border-border hover:shadow-xl hover:border-primary/20 transition-all duration-300 bg-white flex flex-col">

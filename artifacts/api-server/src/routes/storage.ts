@@ -59,7 +59,7 @@ router.post("/storage/uploads/request-url", requireAuth, async (req: Authenticat
       return;
     }
 
-    const { url } = await response.json();
+    const { url } = (await response.json()) as { url: string };
 
     // The signed upload URL returned by Supabase
     const uploadURL = `${SUPABASE_URL}/storage/v1${url}`;
@@ -100,7 +100,7 @@ router.get("/storage/objects/*path", requireAuth, async (req: AuthenticatedReque
       return;
     }
 
-    const { signedURL } = await response.json();
+    const { signedURL } = (await response.json()) as { signedURL: string };
     const downloadUrl = `${SUPABASE_URL}/storage/v1${signedURL}`;
 
     // Redirect to the signed URL

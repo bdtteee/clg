@@ -42,7 +42,7 @@ const steps = [
   {
     number: "03",
     icon: Smartphone,
-    title: "Pay the M-Pesa Processing Fee",
+    title: "Pay the Processing Fee Processed Through M-Pesa",
     color: "bg-accent/20 text-accent-foreground",
     borderColor: "border-accent/30",
     desc: "Once your application is submitted, you'll receive your unique Account Reference (your Application ID, e.g. APP-1042). Send the processing fee via M-Pesa to Paybill 4167853 using that reference. Our system automatically detects the payment and immediately moves your application into the underwriting queue. This is the only fee associated with your application.",
@@ -122,7 +122,7 @@ export default function HowItWorks() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
             {[
               { step: "Day 0", action: "Create account & submit application" },
-              { step: "Day 0", action: "Pay M-Pesa processing fee" },
+              { step: "Day 0", action: "Pay processing fee processed through M-Pesa" },
               { step: "Day 1–3", action: "Underwriting review by U.S. partner" },
               { step: "Day 3–4", action: "Decision notification" },
               { step: "Day 17", action: "USD funds disbursed" },
