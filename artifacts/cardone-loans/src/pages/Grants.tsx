@@ -20,7 +20,7 @@ const personalGrantFeatures = [
   "Disbursement within 14 days of approval",
   "Open to all individual Kenyan applicants",
   "Use of funds is flexible",
-  "M-Pesa processing fee: KES 1,300 (~$10)",
+  "Processing fee processed through M-Pesa: KES 1,300 (~$10)",
 ]
 
 const businessGrantFeatures = [
@@ -32,7 +32,7 @@ const businessGrantFeatures = [
   "Disbursement within 14 days of approval",
   "SME, startup, and established business eligible",
   "Funds can be used for any business purpose",
-  "M-Pesa processing fee: KES 2,600 (~$20)",
+  "Processing fee processed through M-Pesa: KES 2,600 (~$20)",
 ]
 
 const grantUseCases = [
@@ -145,7 +145,7 @@ export default function Grants() {
                       <p className="font-bold text-lg text-secondary">$2,000 – $10,000</p>
                     </div>
                     <div className="bg-muted/50 rounded-xl p-4 border border-border">
-                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">M-Pesa Fee</p>
+                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">Processing Fee Processed Through M-Pesa</p>
                       <p className="font-bold text-lg">KES 1,300</p>
                     </div>
                   </div>
@@ -183,7 +183,7 @@ export default function Grants() {
                       <p className="font-bold text-lg text-primary">$5,000 – $30,000</p>
                     </div>
                     <div className="bg-muted/50 rounded-xl p-4 border border-border">
-                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">M-Pesa Fee</p>
+                      <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">Processing Fee Processed Through M-Pesa</p>
                       <p className="font-bold text-lg">KES 2,600</p>
                     </div>
                   </div>

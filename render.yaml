@@ -42,9 +42,10 @@ services:
         generateValue: true
 
       # ── CORS ────────────────────────────────────────────────────────────────────
-      # Set to your Vercel frontend URL, e.g. https://your-app.vercel.app
+      # Production frontend origin(s). Comma-separate to allow more than one.
+      # *.vercel.app preview deploys are always allowed by the server.
       - key: FRONTEND_URL
-        sync: false
+        value: https://cardoneloansgrants.org
 
       # ── SMTP (email notifications) ──────────────────────────────────────────────────
       - key: SMTP_HOST
@@ -73,4 +74,4 @@ services:
       - key: MPESA_CALLBACK_URL
         sync: false
       - key: MPESA_ENV
-        value: sandbox
+        value: production

@@ -12,7 +12,14 @@ import {
   Upload, X, FileCheck
 } from "lucide-react"
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
+// Target the API origin configured for split deploys (VITE_API_URL, e.g. the
+// Render backend); fall back to the app base path for same-origin / monolithic
+// deploys. This mirrors the generated API client's base-URL resolution so every
+// request — generated hooks and these raw fetches — hits the same backend.
+const BASE =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  import.meta.env.BASE_URL?.replace(/\/$/, "") ||
+  ""
 
 const PRODUCTS = {
   personal_grant: { type: 'grant' as const, category: 'personal' as const, title: 'Personal Grant', min: 2000, max: 10000, feeUsd: 10, feeKes: 1300, icon: User },
@@ -429,7 +436,7 @@ export function Apply() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center text-sm bg-muted/50 rounded-lg p-3">
-                        <span className="text-muted-foreground font-medium">M-Pesa Processing Fee</span>
+                        <span className="text-muted-foreground font-medium">Processing Fee Processed Through M-Pesa</span>
                         <div className="text-right">
                           <span className="font-bold text-primary block">KES {prod.feeKes.toLocaleString()}</span>
                           <span className="text-xs text-muted-foreground">~{formatCurrency(prod.feeUsd)} USD</span>

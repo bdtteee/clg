@@ -39,7 +39,7 @@ const categories = [
     label: "M-Pesa & Fees",
     faqs: [
       { q: "What is the processing fee for?", a: "The processing fee covers administrative costs, credit assessment, document verification, M-Pesa processing infrastructure, partner coordination, and international wire transfer setup. It is a one-time, non-refundable fee per application." },
-      { q: "What are the exact M-Pesa fees?", a: "Personal Grant: KES 1,300 (~$10). Business Grant: KES 2,600 (~$20). Personal Loan: KES 2,600 (~$20). Business Loan: KES 6,500 (~$50). All paid via M-Pesa Paybill 4167853, Account Number = your Application ID." },
+      { q: "What are the exact processing fees processed through M-Pesa?", a: "Personal Grant: KES 1,300 (~$10). Business Grant: KES 2,600 (~$20). Personal Loan: KES 2,600 (~$20). Business Loan: KES 6,500 (~$50). All paid via M-Pesa Paybill 4167853, Account Number = your Application ID." },
       { q: "Is the fee refundable if I'm rejected?", a: "No. Processing fees are non-refundable regardless of the outcome. The fee is charged to initiate the underwriting review process, which incurs costs regardless of the decision." },
       { q: "Can I pay the fee in installments?", a: "No. The full processing fee must be paid in a single M-Pesa transaction before your application proceeds to underwriting review." },
     ],
@@ -67,7 +67,7 @@ const categories = [
 export default function FAQ() {
   useSEO({
     title: "FAQ — Loans & Grants Questions Answered | Cardone Loans & Grants",
-    description: "Get answers to all your questions about applying for personal and business loans and grants in Kenya. Learn about eligibility, M-Pesa fees, approval timelines, disbursement, and more.",
+    description: "Get answers to all your questions about applying for personal and business loans and grants in Kenya. Learn about eligibility, processing fees processed through M-Pesa, approval timelines, disbursement, and more.",
     canonical: "/faq",
     keywords: "Kenya loan FAQ, grant application questions, M-Pesa loan Kenya, loan eligibility Kenya, business loan questions Kenya, how to apply for grant Kenya",
   })
