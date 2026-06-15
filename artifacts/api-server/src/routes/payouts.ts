@@ -7,6 +7,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth, AuthenticatedRequest } from "../middlewares/auth.js";
+import { cleanString, isReasonableAccountNumber } from "../lib/validate.js";
 
 const router = Router();
 
@@ -28,13 +29,21 @@ router.get("/payout-accounts", requireAuth, async (req: AuthenticatedRequest, re
 
 router.post("/payout-accounts", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { accountHolderName, bankName, accountNumber, branch, swiftCode, isDefault } =
-      req.body;
+    const accountHolderName = cleanString(req.body.accountHolderName, 120);
+    const bankName = cleanString(req.body.bankName, 120);
+    const accountNumber = cleanString(req.body.accountNumber, 34);
+    const branch = cleanString(req.body.branch, 80);
+    const swiftCode = cleanString(req.body.swiftCode, 20);
+    const isDefault = Boolean(req.body.isDefault);
 
-    if (!accountHolderName?.trim() || !bankName?.trim() || !accountNumber?.trim()) {
+    if (!accountHolderName || !bankName || !accountNumber) {
       res.status(400).json({
         error: "Account holder name, bank name, and account number are required",
       });
+      return;
+    }
+    if (!isReasonableAccountNumber(accountNumber)) {
+      res.status(400).json({ error: "Enter a valid account number" });
       return;
     }
 
@@ -57,11 +66,11 @@ router.post("/payout-accounts", requireAuth, async (req: AuthenticatedRequest, r
       .insert(payoutAccountsTable)
       .values({
         userId: req.userId!,
-        accountHolderName: accountHolderName.trim(),
-        bankName: bankName.trim(),
-        accountNumber: accountNumber.trim(),
-        branch: branch?.trim() || null,
-        swiftCode: swiftCode?.trim() || null,
+        accountHolderName,
+        bankName,
+        accountNumber,
+        branch: branch ?? null,
+        swiftCode: swiftCode ?? null,
         isDefault: makeDefault,
       })
       .returning();
@@ -197,7 +206,7 @@ router.post("/withdrawals", requireAuth, async (req: AuthenticatedRequest, res) 
         payoutAccountId: account.id,
         applicationId: appId,
         amount: amountNum.toFixed(2),
-        currency: currency || "USD",
+        currency: cleanString(currency, 8) || "USD",
         status: "pending",
       })
       .returning();

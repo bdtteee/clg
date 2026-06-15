@@ -28,6 +28,18 @@ const PRODUCTS = {
   business_loan: { type: 'loan' as const, category: 'business' as const, title: 'Business Loan', min: 20000, max: 100000, feeUsd: 50, feeKes: 6500, icon: Building2 },
 }
 
+const COUNTRIES = [
+  "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde",
+  "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo (Brazzaville)",
+  "Congo (Kinshasa)", "Côte d'Ivoire", "Djibouti", "Egypt", "Equatorial Guinea",
+  "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea",
+  "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi",
+  "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger",
+  "Nigeria", "Rwanda", "São Tomé and Príncipe", "Senegal", "Seychelles",
+  "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania",
+  "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe",
+]
+
 // ── Currency converter ────────────────────────────────────────────────────────────────────────────────
 const TIMEZONE_CURRENCY: Record<string, { code: string; symbol: string; name: string; fallbackRate: number }> = {
   "Africa/Nairobi":       { code: "KES", symbol: "KES",   name: "Kenyan Shilling",        fallbackRate: 129.5  },
@@ -334,6 +346,7 @@ export function Apply() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             fullName: appData.fullName, email: appData.email, phoneNumber: appData.phoneNumber,
+            country: appData.country || "Kenya",
             purposeOfFunds: appData.reason || "", amountRequested: Number(appData.amountRequested),
             businessName: appData.businessName, nationalIdNumber: appData.nationalIdNumber,
             kraPin: appData.kraPin, registrationNumber: appData.registrationNumber,
@@ -358,6 +371,7 @@ export function Apply() {
       type: productDef.type as CreateApplicationRequestType,
       category: productDef.category as CreateApplicationRequestCategory,
       fullName: appData.fullName, email: appData.email, phoneNumber: appData.phoneNumber,
+      country: appData.country || "Kenya",
       purposeOfFunds: appData.reason || "", amountRequested: Number(appData.amountRequested),
       businessName: appData.businessName, nationalId: appData.nationalIdNumber,
       kraPin: appData.kraPin, registrationNumber: appData.registrationNumber,
@@ -605,6 +619,12 @@ export function Apply() {
                     <p className="text-xs text-muted-foreground">Kenyan number for M-Pesa payments</p>
                   </div>
                   <div className="space-y-1.5"><label className="text-sm font-semibold">National ID / Passport Number</label><Input required value={appData.nationalIdNumber || ''} onChange={e => setAppData({ ...appData, nationalIdNumber: e.target.value })} placeholder="e.g. 12345678" /></div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">Country</label>
+                    <select required value={appData.country || 'Kenya'} onChange={e => setAppData({ ...appData, country: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 text-sm h-10 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 transition-all">
+                      {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
                   {productDef.category === 'personal' ? (
                     <>
                       <div className="space-y-1.5"><label className="text-sm font-semibold">Employment Status</label><Input required value={appData.employmentStatus || ''} onChange={e => setAppData({ ...appData, employmentStatus: e.target.value })} placeholder="Employed, Self-employed, etc." /></div>
@@ -821,7 +841,7 @@ export function Apply() {
                     <span>Select <strong className="text-foreground">Lipa na M-Pesa</strong></span>,
                     <span>Select <strong className="text-foreground">Paybill</strong></span>,
                     <span>Business Number: <strong className="text-foreground text-lg tracking-widest font-mono">4167853</strong></span>,
-                    <span>Account Number: <strong className="text-foreground font-mono bg-muted px-2 py-0.5 rounded">APP-{createdAppId}</strong></span>,
+                    <span>Account Name / Reference: <strong className="text-foreground bg-muted px-2 py-0.5 rounded">{appData.fullName || `APP-${createdAppId}`}</strong></span>,
                     <span>Amount: <strong className="text-primary font-bold">KES {productDef.feeKes.toLocaleString()}</strong></span>,
                     "Enter your M-Pesa PIN and confirm",
                     "Copy the confirmation code from your SMS",

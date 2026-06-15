@@ -13,6 +13,7 @@ import {
   normalizeMpesaPhone,
   processingFeeKes,
 } from "../lib/mpesa.js";
+import { cleanString, isEmail, toFiniteNumber, mpesaAccountRef } from "../lib/validate.js";
 
 const router = Router();
 
@@ -41,36 +42,58 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
 
 router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const {
-      type, category, amountRequested, fullName, email, phoneNumber,
-      country, reason, purposeOfFunds, nationalIdNumber, employmentStatus,
-      monthlyIncome, businessName, registrationNumber, kraPin, annualRevenue,
-    } = req.body;
+    const type = cleanString(req.body.type, 16);
+    const category = cleanString(req.body.category, 16);
+    const fullName = cleanString(req.body.fullName, 120);
+    const email = cleanString(req.body.email, 254);
+    const phoneNumber = cleanString(req.body.phoneNumber, 32);
+    const country = cleanString(req.body.country, 60) || "Kenya";
+    const purposeText = cleanString(req.body.purposeOfFunds ?? req.body.reason, 2000);
+    const nationalIdNumber = cleanString(req.body.nationalIdNumber ?? req.body.nationalId, 40);
+    const employmentStatus = cleanString(req.body.employmentStatus, 80);
+    const businessName = cleanString(req.body.businessName, 160);
+    const registrationNumber = cleanString(req.body.registrationNumber, 60);
+    const kraPin = cleanString(req.body.kraPin, 40);
+    const amount = toFiniteNumber(req.body.amountRequested);
+    const monthlyIncome = toFiniteNumber(req.body.monthlyIncome);
+    const annualRevenue = toFiniteNumber(req.body.annualRevenue);
 
-    const purposeText = purposeOfFunds || reason;
-
-    if (!type || !category || !amountRequested || !purposeText || !fullName || !email || !phoneNumber) {
-      res.status(400).json({ error: "Missing required fields" });
-      return;
+    if (type !== "loan" && type !== "grant") {
+      res.status(400).json({ error: "Invalid application type" }); return;
+    }
+    if (category !== "personal" && category !== "business") {
+      res.status(400).json({ error: "Invalid application category" }); return;
+    }
+    if (!fullName || !email || !phoneNumber || !purposeText) {
+      res.status(400).json({ error: "Missing required fields" }); return;
+    }
+    if (!isEmail(email)) {
+      res.status(400).json({ error: "Enter a valid email address" }); return;
+    }
+    if (amount === undefined || amount <= 0 || amount > 1_000_000) {
+      res.status(400).json({ error: "Enter a valid requested amount" }); return;
     }
 
     // Every submitted application receives an instant 85% pre-approval.
-    const preapprovedAmount = (parseFloat(amountRequested) * 0.85).toFixed(2);
+    const preapprovedAmount = (amount * 0.85).toFixed(2);
 
     const [app] = await db
       .insert(applicationsTable)
       .values({
         userId: req.userId!,
         type, category, fullName, email, phoneNumber,
-        country: country || "Kenya",
+        country,
         reason: purposeText,
-        amountRequested: parseFloat(amountRequested).toFixed(2),
+        amountRequested: amount.toFixed(2),
         preapprovedAmount,
         status: "pending",
-        nationalIdNumber, employmentStatus,
-        monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome).toFixed(2) : null,
-        businessName, registrationNumber, kraPin,
-        annualRevenue: annualRevenue ? parseFloat(annualRevenue).toFixed(2) : null,
+        nationalIdNumber: nationalIdNumber ?? null,
+        employmentStatus: employmentStatus ?? null,
+        monthlyIncome: monthlyIncome !== undefined ? monthlyIncome.toFixed(2) : null,
+        businessName: businessName ?? null,
+        registrationNumber: registrationNumber ?? null,
+        kraPin: kraPin ?? null,
+        annualRevenue: annualRevenue !== undefined ? annualRevenue.toFixed(2) : null,
       })
       .returning();
 
@@ -133,16 +156,29 @@ router.patch("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const {
-      amountRequested, fullName, email, phoneNumber, country, reason, purposeOfFunds,
-      nationalIdNumber, employmentStatus, monthlyIncome,
-      businessName, registrationNumber, kraPin, annualRevenue,
-    } = req.body;
+    const fullName = cleanString(req.body.fullName, 120);
+    const email = cleanString(req.body.email, 254);
+    const phoneNumber = cleanString(req.body.phoneNumber, 32);
+    const country = cleanString(req.body.country, 60);
+    const purposeText = cleanString(req.body.purposeOfFunds ?? req.body.reason, 2000);
+    const nationalIdNumber = cleanString(req.body.nationalIdNumber, 40);
+    const employmentStatus = cleanString(req.body.employmentStatus, 80);
+    const businessName = cleanString(req.body.businessName, 160);
+    const registrationNumber = cleanString(req.body.registrationNumber, 60);
+    const kraPin = cleanString(req.body.kraPin, 40);
+    const amount = toFiniteNumber(req.body.amountRequested);
+    const monthlyIncome = toFiniteNumber(req.body.monthlyIncome);
+    const annualRevenue = toFiniteNumber(req.body.annualRevenue);
 
-    const purposeText = purposeOfFunds || reason;
-    const preapprovedAmount = amountRequested
-      ? (parseFloat(amountRequested) * 0.85).toFixed(2)
-      : existing.preapprovedAmount;
+    if (email !== undefined && !isEmail(email)) {
+      res.status(400).json({ error: "Enter a valid email address" }); return;
+    }
+    if (req.body.amountRequested !== undefined && (amount === undefined || amount <= 0 || amount > 1_000_000)) {
+      res.status(400).json({ error: "Enter a valid requested amount" }); return;
+    }
+
+    const preapprovedAmount =
+      amount !== undefined ? (amount * 0.85).toFixed(2) : existing.preapprovedAmount;
 
     const [app] = await db
       .update(applicationsTable)
@@ -152,21 +188,17 @@ router.patch("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
         ...(phoneNumber !== undefined && { phoneNumber }),
         ...(country !== undefined && { country }),
         ...(purposeText !== undefined && { reason: purposeText }),
-        ...(amountRequested !== undefined && {
-          amountRequested: parseFloat(amountRequested).toFixed(2),
+        ...(amount !== undefined && {
+          amountRequested: amount.toFixed(2),
           preapprovedAmount,
         }),
         ...(nationalIdNumber !== undefined && { nationalIdNumber }),
         ...(employmentStatus !== undefined && { employmentStatus }),
-        ...(monthlyIncome !== undefined && {
-          monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome).toFixed(2) : null,
-        }),
+        ...(monthlyIncome !== undefined && { monthlyIncome: monthlyIncome.toFixed(2) }),
         ...(businessName !== undefined && { businessName }),
         ...(registrationNumber !== undefined && { registrationNumber }),
         ...(kraPin !== undefined && { kraPin }),
-        ...(annualRevenue !== undefined && {
-          annualRevenue: annualRevenue ? parseFloat(annualRevenue).toFixed(2) : null,
-        }),
+        ...(annualRevenue !== undefined && { annualRevenue: annualRevenue.toFixed(2) }),
         updatedAt: new Date(),
       })
       .where(eq(applicationsTable.id, id))
@@ -259,7 +291,8 @@ router.post("/:id/stk-push", requireAuth, async (req: AuthenticatedRequest, res)
     const result = await initiateStkPush(config, {
       phone,
       amount,
-      accountReference: `APP-${app.id}`,
+      // Payment reference is the customer's name (alphanumeric, max 12 chars).
+      accountReference: mpesaAccountRef(app.fullName, `APP${app.id}`),
       description: `Fee APP-${app.id}`,
     });
 
