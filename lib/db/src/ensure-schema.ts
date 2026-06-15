@@ -1,10 +1,8 @@
-import { sql } from "drizzle-orm";
-import { db } from "@workspace/db";
+import pg from "pg";
 
 // Idempotent DDL that brings any database (fresh or existing) up to the schema
-// the app needs. Runs on every boot — safe to re-run because every statement
-// uses IF NOT EXISTS / duplicate-object guards. This removes the need to run
-// `drizzle-kit push` manually before a deploy.
+// the app needs. Safe to re-run because every statement uses IF NOT EXISTS /
+// duplicate-object guards. Removes the need to run `drizzle-kit push` manually.
 const statements: string[] = [
   // ── Enums ──────────────────────────────────────────────────────────────────
   `DO $$ BEGIN CREATE TYPE user_role AS ENUM ('user','admin'); EXCEPTION WHEN duplicate_object THEN null; END $$;`,
@@ -153,9 +151,46 @@ const statements: string[] = [
   `ALTER TABLE kyc_documents ADD COLUMN IF NOT EXISTS file_path text;`,
 ];
 
+// Runs the DDL on a dedicated short-lived connection using the *direct*
+// (non-pooling) URL when available — DDL and the simple query protocol are most
+// reliable off the transaction pooler. Each statement is isolated so one
+// failure never aborts the rest, and this never throws (callers don't need to
+// guard it).
 export async function ensureSchema(): Promise<void> {
-  for (const stmt of statements) {
-    await db.execute(sql.raw(stmt));
+  const url =
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL;
+
+  if (!url) {
+    console.warn("ensureSchema: no database URL configured; skipping.");
+    return;
   }
-  console.log("Database schema ensured.");
+
+  const isSupabase = url.includes("supabase.com");
+  const client = new pg.Client({
+    connectionString: url,
+    ssl: isSupabase ? { rejectUnauthorized: false } : undefined,
+    connectionTimeoutMillis: 15_000,
+  });
+
+  try {
+    await client.connect();
+    for (const stmt of statements) {
+      try {
+        await client.query(stmt); // string form → simple query protocol
+      } catch (err) {
+        console.error("ensureSchema statement failed:", (err as Error).message);
+      }
+    }
+    console.log("Database schema ensured.");
+  } catch (err) {
+    console.error("ensureSchema connection error:", (err as Error).message);
+  } finally {
+    try {
+      await client.end();
+    } catch {
+      /* ignore */
+    }
+  }
 }

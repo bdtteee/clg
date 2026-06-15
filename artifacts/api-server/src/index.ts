@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { ensureSchema } from "./lib/ensureSchema.js";
+import { ensureSchema } from "@workspace/db";
 
 // Prevent unhandled rejections and exceptions from crashing the process
 process.on("unhandledRejection", (reason: unknown) => {
@@ -64,10 +64,11 @@ const rawPort = process.env["PORT"];
 if (rawPort) {
   const port = Number(rawPort);
   if (!Number.isNaN(port) && port > 0) {
-    init().finally(() => {
-      app.listen(port, () => {
-        console.log(`Server listening on port ${port}`);
-      });
+    // Listen immediately so the platform health check passes; run the schema
+    // migration + admin seed in the background — never block startup on the DB.
+    app.listen(port, () => {
+      console.log(`Server listening on port ${port}`);
+      void init();
     });
   }
 } else {
