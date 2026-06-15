@@ -38,9 +38,9 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }
 export default function Home() {
   useSEO({
     title: "Cardone Loans & Grants | U.S. & Canadian Funding for Africa — $2,000 to $100,000 USD",
-    description: "Apply for personal or business loans and grants from $2,000 to $100,000 USD. African individuals and businesses connect directly with U.S. and Canadian funding partners. 2–5 business day decisions. Pay via M-Pesa Paybill 4167853. No collateral required.",
+    description: "Apply for personal or business loans and grants from $2,000 to $100,000 USD. African individuals and businesses connect directly with U.S. and Canadian funding partners. 2–5 business day decisions. No collateral required.",
     canonical: "/",
-    keywords: "loans Kenya, grants Kenya, business loans Kenya, personal loans Kenya, USD loans Kenya, US funding Kenya, M-Pesa loans, Kenya business grants, personal grants Kenya, apply for loan Kenya, Cardone loans, Kenya USD funding",
+    keywords: "loans Kenya, grants Kenya, business loans Kenya, personal loans Kenya, USD loans Kenya, US funding Kenya, Kenya business grants, personal grants Kenya, apply for loan Kenya, Cardone loans, Kenya USD funding",
   })
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
@@ -50,7 +50,7 @@ export default function Home() {
     { q: "When will my funds be disbursed?", a: "Disbursement occurs within 14 business days after your application is approved. Funds are transferred directly to your provided bank account in USD." },
     { q: "Are you a direct lender?", a: "No. Cardone Loans & Grants acts as an intermediary connecting African applicants with reputable U.S.- and Canadian-based funding companies. We facilitate applications and coordinate with our North American funding partners." },
     { q: "What does the 85% pre-approval mean?", a: "For both loans and grants, our automated eligibility check guarantees 85% of your requested amount pending final verification. For example, if you apply for $20,000, you receive an instant pre-approval for $17,000." },
-    { q: "Why is the processing fee paid via M-Pesa?", a: "M-Pesa (Paybill 4167853) is our primary payment channel for East African applicants. The fee covers administrative costs, credit assessment, document verification, and coordination with our North American partners. It is one-time and non-refundable." },
+    { q: "Why is there a processing fee?", a: "The fee covers administrative costs, credit assessment, document verification, and coordination with our North American partners. It is one-time and non-refundable." },
     { q: "What documents do I need?", a: "Personal: National ID or passport and basic personal info. Business: Business registration number and tax PIN. Our streamlined process minimises paperwork for all African applicants." },
   ]
 
@@ -76,11 +76,7 @@ export default function Home() {
               <motion.p initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.5, delay: 0.2 }} className="text-xl text-white/70 mb-4 leading-relaxed max-w-lg">
                 We connect African individuals and businesses directly with U.S. and Canadian funding companies — offering personal and business loans & grants from <strong className="text-white">$2,000 to $100,000 USD</strong>.
               </motion.p>
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.5, delay: 0.25 }} className="flex items-center gap-3 mb-8 p-3 rounded-xl bg-white/8 border border-white/12 w-fit">
-                <Smartphone className="h-5 w-5 text-[#D4AF37] shrink-0" />
-                <span className="text-white/80 text-sm">Processing fee paid securely via <strong className="text-white">M-Pesa Paybill 4167853</strong></span>
-              </motion.div>
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.5, delay: 0.3 }} className="flex flex-col sm:flex-row gap-4">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.5, delay: 0.3 }} className="flex flex-col sm:flex-row gap-4 mt-8">
                 <Link href="/register"><Button size="lg" variant="accent" className="w-full sm:w-auto text-primary font-bold text-base px-8 h-14 shadow-2xl shadow-accent/30 group">Apply Now — It's Free<ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" /></Button></Link>
                 <a href="#how-it-works"><Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white/20 bg-white/10 hover:bg-white/20 hover:text-white h-14 text-base">See How It Works</Button></a>
               </motion.div>
@@ -125,7 +121,7 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center text-center">
             {[
               { icon: Lock, label: "256-bit SSL Security", color: "text-primary" },
-              { icon: Smartphone, label: "M-Pesa Payments", color: "text-secondary" },
+              { icon: Smartphone, label: "Secure Payments", color: "text-secondary" },
               { icon: Zap, label: "Instant Pre-Qualification", color: "text-accent-foreground" },
               { icon: Globe, label: "U.S. Provider Network", color: "text-primary" },
             ].map((item, i) => (
@@ -151,7 +147,7 @@ export default function Home() {
             {[
               { step: "01", icon: User, title: "Choose Your Product", desc: "Select from personal or business loan/grant — sized for your specific need and ambition, from $2,000 to $100,000 USD.", color: "bg-primary/10 text-primary" },
               { step: "02", icon: FileText, title: "Submit Application", desc: "Fill out our concise online form with your personal or business details. Takes under 5 minutes for most applicants.", color: "bg-secondary/10 text-secondary" },
-              { step: "03", icon: Smartphone, title: "Pay via M-Pesa", desc: "Send the small processing fee via M-Pesa Paybill 4167853. This activates your underwriting review with our U.S. partners.", color: "bg-accent/20 text-accent-foreground" },
+              { step: "03", icon: Smartphone, title: "Pay the Processing Fee", desc: "Pay the small processing fee securely online. This activates your underwriting review with our U.S. partners.", color: "bg-accent/20 text-accent-foreground" },
               { step: "04", icon: DollarSign, title: "Receive USD Funding", desc: "Decision in 2–5 business days. Funds disbursed within 14 days of approval directly to your account.", color: "bg-primary/10 text-primary" },
             ].map((item, i) => (
               <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }} className="relative z-10 flex flex-col items-center text-center group">
@@ -177,7 +173,7 @@ export default function Home() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5 }} className="text-center max-w-2xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-sm font-semibold mb-4"><Briefcase className="h-4 w-4" /> Our Products</div>
             <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-4">USD funding for every African goal</h2>
-            <p className="text-white/60 text-lg">Processing fees are paid via M-Pesa or local transfer. Funding is disbursed in USD.</p>
+            <p className="text-white/60 text-lg">Processing fees are paid securely online. Funding is disbursed in USD.</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
@@ -199,7 +195,7 @@ export default function Home() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-white/5 rounded-xl p-4 border border-white/10"><p className="text-white/50 text-xs font-medium mb-1 uppercase tracking-wider">USD Amount</p><p className="font-bold text-base text-white">{product.range}</p></div>
-                      <div className="bg-white/5 rounded-xl p-4 border border-white/10"><p className="text-white/50 text-xs font-medium mb-1 uppercase tracking-wider">Processing Fee Processed Through M-Pesa</p><p className="font-bold text-base text-accent">{product.fee}</p></div>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10"><p className="text-white/50 text-xs font-medium mb-1 uppercase tracking-wider">Processing Fee</p><p className="font-bold text-base text-accent">{product.fee}</p></div>
                     </div>
                     <ul className="space-y-2">{product.features.map((f, j) => <li key={j} className="flex items-center gap-2 text-sm text-white/70"><CheckCircle2 className="h-4 w-4 text-secondary shrink-0" />{f}</li>)}</ul>
                   </CardContent>
@@ -221,7 +217,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: Globe, color: "bg-primary/10 text-primary", title: "Direct US & Canadian Funding Network", desc: "We maintain active relationships with accredited U.S. and Canadian lending companies and grant foundations. Your application goes directly to verified North American capital sources." },
-              { icon: Smartphone, color: "bg-secondary/10 text-secondary", title: "M-Pesa & Local Transfer", desc: "No wire transfers, no bank visits. The processing fee is paid via M-Pesa Paybill 4167853 or local transfer — the way Africans do business." },
+              { icon: Smartphone, color: "bg-secondary/10 text-secondary", title: "Fast, Secure Payments", desc: "No wire transfers, no bank visits. The processing fee is paid securely online — the way Africans do business." },
               { icon: ShieldCheck, color: "bg-accent/20 text-accent-foreground", title: "Transparent Process", desc: "We are an intermediary, not a lender. We're upfront about every fee, every step, and every timeline. No hidden charges. No surprises." },
             ].map((item, i) => (
               <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }}>
@@ -283,7 +279,7 @@ export default function Home() {
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {[
-              { name: "Grace M.", role: "Retail Business Owner", location: "Nairobi, Kenya", product: "Business Grant — $18,000", quote: "Applied for a Business Grant on Monday, received the approval decision by Wednesday afternoon. The M-Pesa payment was instant and the dashboard kept me updated throughout. Funds arrived exactly as promised. I've since expanded to a second location.", rating: 5 },
+              { name: "Grace M.", role: "Retail Business Owner", location: "Nairobi, Kenya", product: "Business Grant — $18,000", quote: "Applied for a Business Grant on Monday, received the approval decision by Wednesday afternoon. The payment was instant and the dashboard kept me updated throughout. Funds arrived exactly as promised. I've since expanded to a second location.", rating: 5 },
               { name: "David K.", role: "Civil Engineer", location: "Mombasa, Kenya", product: "Business Loan — $45,000", quote: "I needed capital for construction equipment. The 85% pre-approval notice arrived within minutes of submitting my application. The process was completely transparent — no hidden fees, no surprises. Funds were wired to my account in 13 days.", rating: 5 },
               { name: "Amina W.", role: "Restaurant Owner", location: "Kisumu, Kenya", product: "Business Grant — $22,500", quote: "I was cautious at first, but every detail on the website matched the real experience. The online form took 4 minutes, the processing fee was sent in seconds, and the team responded to my email the same day. Highly recommended to any African entrepreneur.", rating: 5 },
             ].map((t, i) => (
@@ -360,7 +356,7 @@ export default function Home() {
               <Link href="/register"><Button size="lg" variant="accent" className="text-primary font-bold text-base px-10 h-14 shadow-2xl shadow-accent/20 group">Start Your Application<ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" /></Button></Link>
               <Link href="/login"><Button size="lg" variant="outline" className="text-white border-white/25 bg-white/10 hover:bg-white/20 hover:text-white h-14 text-base">Sign In to Portal</Button></Link>
             </div>
-            <p className="mt-6 text-white/40 text-sm">Free to register. Processing fee only paid upon application submission via M-Pesa.</p>
+            <p className="mt-6 text-white/40 text-sm">Free to register. Processing fee only paid upon application submission.</p>
           </motion.div>
         </div>
       </section>

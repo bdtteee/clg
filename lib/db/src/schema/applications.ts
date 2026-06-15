@@ -56,6 +56,7 @@ export const applicationsTable = pgTable("applications", {
   monthlyIncome: numeric("monthly_income", { precision: 12, scale: 2 }),
   annualRevenue: numeric("annual_revenue", { precision: 12, scale: 2 }),
   paymentCode: text("payment_code"),
+  mpesaCheckoutRequestId: text("mpesa_checkout_request_id"),
   adminComment: text("admin_comment"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

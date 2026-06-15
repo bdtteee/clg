@@ -7,6 +7,12 @@ import {
 } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, AuthenticatedRequest } from "../middlewares/auth.js";
+import {
+  getMpesaConfig,
+  initiateStkPush,
+  normalizeMpesaPhone,
+  processingFeeKes,
+} from "../lib/mpesa.js";
 
 const router = Router();
 
@@ -218,6 +224,59 @@ router.post("/:id/payment", requireAuth, async (req: AuthenticatedRequest, res) 
   } catch (error) {
     console.error("Submit payment error:", error);
     res.status(500).json({ error: "Failed to submit payment" });
+  }
+});
+
+// POST /api/applications/:id/stk-push — trigger an M-Pesa STK push for the fee
+router.post("/:id/stk-push", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid application ID" }); return; }
+
+    const config = getMpesaConfig();
+    if (!config) {
+      res.status(503).json({
+        error: "M-Pesa payments are not configured. Please enter your payment code manually.",
+      });
+      return;
+    }
+
+    const [app] = await db
+      .select()
+      .from(applicationsTable)
+      .where(and(eq(applicationsTable.id, id), eq(applicationsTable.userId, req.userId!)))
+      .limit(1);
+    if (!app) { res.status(404).json({ error: "Application not found" }); return; }
+
+    const phone = normalizeMpesaPhone(req.body?.phoneNumber || app.phoneNumber);
+    if (!phone) {
+      res.status(400).json({ error: "Enter a valid Safaricom number (e.g. 07XX XXX XXX)." });
+      return;
+    }
+
+    const amount = processingFeeKes(app.type, app.category);
+
+    const result = await initiateStkPush(config, {
+      phone,
+      amount,
+      accountReference: `APP-${app.id}`,
+      description: `Fee APP-${app.id}`,
+    });
+
+    await db
+      .update(applicationsTable)
+      .set({ mpesaCheckoutRequestId: result.CheckoutRequestID || null, updatedAt: new Date() })
+      .where(eq(applicationsTable.id, id));
+
+    res.json({
+      checkoutRequestId: result.CheckoutRequestID,
+      message: result.CustomerMessage || "Payment prompt sent. Enter your M-Pesa PIN on your phone.",
+    });
+  } catch (error) {
+    console.error("STK push error:", error);
+    const message =
+      error instanceof Error ? error.message : "Could not initiate M-Pesa payment.";
+    res.status(502).json({ error: message });
   }
 });
 

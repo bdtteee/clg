@@ -43,7 +43,8 @@ e‑mail/in‑app notifications, and a full admin back‑office.
 - **Multi‑step application** — product → details → KYC/KYB documents → **payout/bank details** → M‑Pesa payment → done.
 - **End‑to‑end document uploads** — direct‑to‑Supabase‑Storage signed uploads; documents are viewable by the applicant and the admin via signed download URLs.
 - **Instant 85% pre‑approval** — every submitted loan **or grant** receives an 85% pre‑approval of the requested amount.
-- **Processing fee via M‑Pesa** — manual Paybill payment; the **account name shown is the applicant's name**.
+- **Processing fee via M‑Pesa STK Push** — the applicant is prompted on their phone and the app auto‑advances on payment; manual Paybill code entry remains a fallback. The **account name shown is the applicant's name**.
+- **Auto‑migrating schema** — the API applies an idempotent schema sync on every boot, so no manual migration step is required before a deploy.
 - **Payout accounts** — users save reusable bank accounts for disbursement.
 - **Withdrawals** — users request withdrawals to a chosen payout account; admins approve / reject / mark paid.
 - **Notifications** — in‑app notifications at every status change.
@@ -133,7 +134,7 @@ cp .env.example .env
 | `FRONTEND_URL` | prod | CORS | Comma‑separated allowed origins (prod domains + `*.vercel.app` already allowed) |
 | `VITE_API_URL` | split deploy | frontend build | Render API base URL. Leave unset for monolithic Vercel |
 | `SMTP_HOST/PORT/SECURE/USER/PASS/FROM` | optional | e‑mail | Notification e‑mails |
-| `MPESA_CONSUMER_KEY/SECRET/SHORTCODE/PASSKEY/CALLBACK_URL/ENV` | optional | M‑Pesa | Manual payment is used by default; these are for future Daraja integration |
+| `MPESA_CONSUMER_KEY/SECRET/SHORTCODE/PASSKEY/CALLBACK_URL/ENV` | optional | M‑Pesa STK Push | Enables STK Push to collect the fee. `MPESA_CALLBACK_URL` must be a public `…/api/payments/mpesa/callback`; `MPESA_ENV` is `sandbox` or `production`. Without these, users pay via manual Paybill code entry |
 
 ---
 
@@ -181,7 +182,11 @@ Schema lives in `lib/db/src/schema/` (Drizzle ORM). Tables:
 - **withdrawals** — amount, currency, status (`pending`/`approved`/`rejected`/`paid`), payout account, optional application
 - **notifications**, **admin_actions**, **manual_payments**, **payments**
 
-Apply schema changes (after editing any schema file):
+**Auto‑migration:** the API runs an idempotent `ensureSchema()` on every boot that
+creates any missing tables, enums, and columns (`IF NOT EXISTS` guards). A fresh or
+existing database is brought up to date automatically — **no manual push is required**.
+
+To force a full sync from the Drizzle schema (e.g. for destructive changes), you can still run:
 
 ```bash
 pnpm --filter @workspace/db run push          # interactive
@@ -234,7 +239,7 @@ Admins sign in at `/admin-login` and land on `/admin`.
 2. **Details** — amount, contact, ID/business info, purpose, optional business plan.
 3. **Documents** — KYC (personal) or KYB (business) uploads. Files upload directly to Supabase Storage via signed URLs and are reviewable by admins.
 4. **Payout / Bank details** — add/select the bank account for disbursement (reused later for withdrawals).
-5. **Payment** — pay the processing fee via M‑Pesa Paybill **4167853**, Account = `APP-<id>`. The **Account Name displayed is the applicant's full name**. Enter the M‑Pesa confirmation code to submit.
+5. **Payment** — pay the processing fee via **M‑Pesa STK Push** (a prompt is sent to the phone; the app auto‑advances once paid), or manually via Paybill **4167853**, Account = `APP-<id>`, then enter the confirmation code. The **Account Name displayed is the applicant's full name**.
 6. **Done** — application is under review with an **85% pre‑approval** shown.
 
 On submission every application (loan **and** grant) is stored with
@@ -268,7 +273,9 @@ All routes are under `/api`.
 
 **Auth** — `POST /auth/register` · `POST /auth/login` · `POST /auth/logout` · `GET /auth/me` · `POST /auth/change-password`
 
-**Applications** — `GET /applications` · `POST /applications` · `GET /applications/:id` · `PATCH /applications/:id` · `POST /applications/:id/payment` · `GET|POST /applications/:id/kyc-documents`
+**Applications** — `GET /applications` · `POST /applications` · `GET /applications/:id` · `PATCH /applications/:id` · `POST /applications/:id/payment` · `POST /applications/:id/stk-push` · `GET|POST /applications/:id/kyc-documents`
+
+**Payments (M‑Pesa)** — `POST /payments/mpesa/callback` (public — Safaricom STK callback)
 
 **Storage** — `POST /storage/uploads/request-url` · `GET /storage/objects/*path`
 
