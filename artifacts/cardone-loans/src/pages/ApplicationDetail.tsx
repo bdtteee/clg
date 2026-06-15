@@ -8,8 +8,7 @@ import { format } from "date-fns"
 import { Loader2, ArrowLeft, Building2, User, FileText, Calendar, Zap, MessageSquare, ExternalLink, CheckCircle2, Clock, XCircle, Upload, Pencil } from "lucide-react"
 import { Link } from "wouter"
 import { Button } from "@/components/ui/button"
-
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
+import { apiUrl, objectViewUrl } from "@/lib/api"
 
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
@@ -37,7 +36,7 @@ function useKycDocuments(appId: number) {
   return useQuery({
     queryKey: ["kyc-documents", appId],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/applications/${appId}/kyc-documents`, { credentials: "include" })
+      const res = await fetch(apiUrl(`/api/applications/${appId}/kyc-documents`), { credentials: "include" })
       if (!res.ok) return []
       return res.json()
     },
@@ -107,23 +106,21 @@ export function ApplicationDetail() {
         </Card>
       )}
 
-      {app.type === 'loan' && (
-        <Card className="mb-8 border-accent bg-accent/5">
-          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-lg font-bold text-accent-foreground flex items-center gap-2 mb-2">
-                <Zap className="h-5 w-5 text-accent" /> 65% Pre-Approval Active
-              </h3>
-              <p className="text-muted-foreground text-sm max-w-lg">
-                Based on our preliminary automated underwriting, this loan has secured a 65% pre-approval guarantee pending final verification.
-              </p>
-            </div>
-            <div className="text-3xl font-display font-black text-primary bg-white px-6 py-3 rounded-xl shadow-sm border border-accent/20">
-              {formatCurrency(app.amountRequested * 0.65)}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="mb-8 border-accent bg-accent/5">
+        <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h3 className="text-lg font-bold text-accent-foreground flex items-center gap-2 mb-2">
+              <Zap className="h-5 w-5 text-accent" /> 85% Pre-Approval Active
+            </h3>
+            <p className="text-muted-foreground text-sm max-w-lg">
+              Based on our preliminary automated underwriting, this {app.type} has secured an 85% pre-approval guarantee pending final verification.
+            </p>
+          </div>
+          <div className="text-3xl font-display font-black text-primary bg-white px-6 py-3 rounded-xl shadow-sm border border-accent/20">
+            {formatCurrency(app.preapprovedAmount ?? app.amountRequested * 0.85)}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <Card>
@@ -228,7 +225,7 @@ export function ApplicationDetail() {
                     <DocStatusBadge status={doc.status} />
                     {doc.fileUrl && (
                       <a
-                        href={`${BASE}/api/storage/objects/${doc.fileUrl.replace(/^\/objects\//, '')}`}
+                        href={objectViewUrl(doc.fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"

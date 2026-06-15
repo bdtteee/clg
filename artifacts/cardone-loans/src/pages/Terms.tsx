@@ -52,7 +52,7 @@ You may only maintain one (1) active application at any time across all product 
   },
   {
     title: "5. Loan Pre-Qualification",
-    content: `5.1 For all loan products (Personal Loan and Business Loan), Cardone's automated system issues a pre-qualification equal to 65% of the requested loan amount upon submission of a complete application.
+    content: `5.1 For all loan products (Personal Loan and Business Loan), Cardone's automated system issues a pre-qualification equal to 85% of the requested loan amount upon submission of a complete application.
 
 5.2 This pre-qualification is conditional and subject to final underwriting approval by the assigned Funding Partner. It does not constitute a binding loan offer or approval.
 

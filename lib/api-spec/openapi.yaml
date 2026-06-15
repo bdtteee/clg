@@ -680,6 +680,18 @@ components:
         adminComment:
           type: string
           nullable: true
+        reason:
+          type: string
+          nullable: true
+        approvedAmount:
+          type: number
+          nullable: true
+        assignedPartner:
+          type: string
+          nullable: true
+        disbursementDate:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time

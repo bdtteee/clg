@@ -35,7 +35,7 @@ const steps = [
     details: [
       "Four tailored products to match your situation",
       "Streamlined form — under 5 minutes to complete",
-      "For loans: instant 65% pre-qualification letter issued",
+      "For loans: instant 85% pre-qualification letter issued",
       "No complex paperwork or document upload at this stage",
     ],
   },
@@ -248,7 +248,7 @@ export default function HowItWorks() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
             <h2 className="text-4xl font-display font-bold mb-4">Ready to begin your application?</h2>
-            <p className="text-muted-foreground text-lg mb-8">Creating your account is free and takes under 2 minutes. Your 65% pre-qualification is waiting.</p>
+            <p className="text-muted-foreground text-lg mb-8">Creating your account is free and takes under 2 minutes. Your 85% pre-qualification is waiting.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
                 <Button size="lg" className="font-bold h-14 px-10">Start Application — Free <ArrowRight className="ml-2 h-5 w-5" /></Button>

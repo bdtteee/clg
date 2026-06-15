@@ -7,6 +7,8 @@ import {
   usersTable,
   manualPaymentsTable,
   kycDocumentsTable,
+  withdrawalsTable,
+  payoutAccountsTable,
 } from "@workspace/db/schema";
 import { eq, count, desc, isNotNull } from "drizzle-orm";
 import { requireAdmin, AuthenticatedRequest } from "../middlewares/auth.js";
@@ -401,6 +403,75 @@ router.get("/users", requireAdmin, async (_req: AuthenticatedRequest, res) => {
   } catch (error) {
     console.error("Admin get users error:", error);
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// ── Withdrawals ─────────────────────────────────────────────────────────────────
+// List all withdrawal requests with applicant + payout account details.
+router.get("/withdrawals", requireAdmin, async (_req: AuthenticatedRequest, res) => {
+  try {
+    const rows = await db
+      .select({
+        withdrawal: withdrawalsTable,
+        account: payoutAccountsTable,
+        user: { email: usersTable.email, fullName: usersTable.fullName },
+      })
+      .from(withdrawalsTable)
+      .leftJoin(payoutAccountsTable, eq(withdrawalsTable.payoutAccountId, payoutAccountsTable.id))
+      .innerJoin(usersTable, eq(withdrawalsTable.userId, usersTable.id))
+      .orderBy(desc(withdrawalsTable.createdAt));
+
+    res.json(
+      rows.map(({ withdrawal, account, user }) => ({
+        ...withdrawal,
+        amount: parseFloat(withdrawal.amount),
+        userEmail: user.email,
+        userFullName: user.fullName,
+        payoutAccount: account ?? null,
+      })),
+    );
+  } catch (error) {
+    console.error("Admin get withdrawals error:", error);
+    res.status(500).json({ error: "Failed to fetch withdrawals" });
+  }
+});
+
+// Update a withdrawal's status (approve / reject / paid) and notify the user.
+router.post("/withdrawals/:id/update", requireAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid withdrawal ID" }); return; }
+
+    const { status, comment } = req.body;
+    if (!["approved", "rejected", "paid"].includes(status)) {
+      res.status(400).json({ error: "status must be 'approved', 'rejected', or 'paid'" });
+      return;
+    }
+
+    const [withdrawal] = await db
+      .update(withdrawalsTable)
+      .set({ status, adminComment: comment?.trim() || null, updatedAt: new Date() })
+      .where(eq(withdrawalsTable.id, id))
+      .returning();
+
+    if (!withdrawal) { res.status(404).json({ error: "Withdrawal not found" }); return; }
+
+    const messages: Record<string, string> = {
+      approved: `Your withdrawal request #${withdrawal.id} for ${withdrawal.currency} ${parseFloat(withdrawal.amount).toLocaleString()} has been approved and is being processed.`,
+      paid: `Your withdrawal request #${withdrawal.id} for ${withdrawal.currency} ${parseFloat(withdrawal.amount).toLocaleString()} has been paid to your selected bank account.`,
+      rejected: `Your withdrawal request #${withdrawal.id} was declined. ${comment ? `Reason: ${comment}.` : ""} Please contact info@cardoneloansgrants.org.`,
+    };
+
+    await db.insert(notificationsTable).values({
+      userId: withdrawal.userId,
+      message: messages[status],
+      read: false,
+    });
+
+    res.json({ ...withdrawal, amount: parseFloat(withdrawal.amount) });
+  } catch (error) {
+    console.error("Update withdrawal error:", error);
+    res.status(500).json({ error: "Failed to update withdrawal" });
   }
 });
 

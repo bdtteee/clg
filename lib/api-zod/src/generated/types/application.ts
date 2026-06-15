@@ -31,6 +31,10 @@ export interface Application {
   annualRevenue?: number | null;
   ownerDetails?: string | null;
   adminComment?: string | null;
+  reason?: string | null;
+  approvedAmount?: number | null;
+  assignedPartner?: string | null;
+  disbursementDate?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

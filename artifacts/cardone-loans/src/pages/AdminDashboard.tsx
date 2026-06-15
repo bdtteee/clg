@@ -15,12 +15,15 @@ import { format } from "date-fns"
 import {
   Loader2, Users, FileText, CheckCircle, Clock, XCircle,
   CreditCard, Search, Filter, Eye, ThumbsUp, ThumbsDown,
-  BarChart2, User, ShieldCheck, AlertCircle, X,
+  BarChart2, User, ShieldCheck, AlertCircle, X, Banknote,
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useToast } from "@/hooks/use-toast"
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
+const BASE =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  import.meta.env.BASE_URL?.replace(/\/$/, "") ||
+  ""
 
 type Tab = "overview" | "applications" | "payments" | "withdrawals"
 
@@ -398,14 +401,106 @@ function PaymentsTab() {
   )
 }
 
+function useAdminWithdrawals() {
+  return useQuery({
+    queryKey: ["admin-withdrawals"],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/api/admin/withdrawals`, { credentials: "include" })
+      if (!res.ok) throw new Error("Failed to fetch withdrawals")
+      return res.json() as Promise<Array<any>>
+    },
+  })
+}
+
+function WithdrawalStatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "approved": return <Badge variant="secondary">Approved</Badge>
+    case "paid": return <Badge variant="success">Paid</Badge>
+    case "rejected": return <Badge variant="destructive">Rejected</Badge>
+    default: return <Badge variant="warning">Pending</Badge>
+  }
+}
+
 function WithdrawalsTab() {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-        <CreditCard className="h-8 w-8 text-muted-foreground" />
+  const { data: withdrawals, isLoading } = useAdminWithdrawals()
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const [busy, setBusy] = useState<number | null>(null)
+
+  const act = async (id: number, status: "approved" | "rejected" | "paid") => {
+    let comment: string | undefined
+    if (status === "rejected") comment = prompt("Rejection reason (optional):") || undefined
+    setBusy(id)
+    try {
+      const res = await fetch(`${BASE}/api/admin/withdrawals/${id}/update`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, comment }),
+      })
+      if (!res.ok) throw new Error()
+      queryClient.invalidateQueries({ queryKey: ["admin-withdrawals"] })
+      toast({ title: `Withdrawal ${status}` })
+    } catch {
+      toast({ title: "Failed to update withdrawal", variant: "destructive" })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  if (isLoading) return <div className="flex h-48 items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+
+  const list = withdrawals ?? []
+  const pending = list.filter((w) => w.status === "pending")
+  const totalRequested = list.reduce((s, w) => s + Number(w.amount), 0)
+
+  if (list.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+          <Banknote className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h3 className="font-bold text-lg mb-2">No withdrawals yet</h3>
+        <p className="text-muted-foreground text-sm max-w-sm">Withdrawal requests submitted by applicants will appear here for review.</p>
       </div>
-      <h3 className="font-bold text-lg mb-2">No withdrawals yet</h3>
-      <p className="text-muted-foreground text-sm max-w-sm">Withdrawal requests from approved applicants will appear here once disbursement is initiated.</p>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card><CardContent className="p-5 flex items-center gap-4"><div className="p-3 bg-primary/10 rounded-xl"><Banknote className="h-5 w-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Requests</p><p className="text-xl font-bold">{list.length}</p></div></CardContent></Card>
+        <Card><CardContent className="p-5 flex items-center gap-4"><div className="p-3 bg-amber-100 rounded-xl"><Clock className="h-5 w-5 text-amber-600" /></div><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-amber-600">{pending.length}</p></div></CardContent></Card>
+        <Card><CardContent className="p-5 flex items-center gap-4"><div className="p-3 bg-green-100 rounded-xl"><CheckCircle className="h-5 w-5 text-green-600" /></div><div><p className="text-xs text-muted-foreground">Total Requested</p><p className="text-xl font-bold">{formatCurrency(totalRequested)}</p></div></CardContent></Card>
+      </div>
+      <Card><CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full text-sm text-left">
+        <thead className="bg-muted/50 text-muted-foreground font-medium border-y border-border"><tr>
+          <th className="px-4 py-3">Applicant</th><th className="px-4 py-3">Amount</th><th className="px-4 py-3">Bank Details</th><th className="px-4 py-3">Application</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th>
+        </tr></thead>
+        <tbody className="divide-y divide-border">
+          {list.map((w) => (
+            <tr key={w.id} className="hover:bg-muted/30 transition-colors">
+              <td className="px-4 py-3"><div className="font-medium">{w.userFullName}</div><div className="text-xs text-muted-foreground">{w.userEmail}</div></td>
+              <td className="px-4 py-3 font-bold">{w.currency} {Number(w.amount).toLocaleString()}</td>
+              <td className="px-4 py-3 text-xs">
+                {w.payoutAccount ? (<><div className="font-medium">{w.payoutAccount.bankName}</div><div className="text-muted-foreground">{w.payoutAccount.accountHolderName}</div><div className="font-mono">{w.payoutAccount.accountNumber}{w.payoutAccount.branch ? ` · ${w.payoutAccount.branch}` : ""}</div></>) : <span className="text-muted-foreground">—</span>}
+              </td>
+              <td className="px-4 py-3">{w.applicationId ? <Link href={`/admin/applications/${w.applicationId}`}><span className="text-primary hover:underline font-mono text-xs">APP-{w.applicationId}</span></Link> : <span className="text-muted-foreground">—</span>}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(w.createdAt), "MMM d, yyyy")}</td>
+              <td className="px-4 py-3"><WithdrawalStatusBadge status={w.status} /></td>
+              <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1.5">
+                {w.status === "pending" && (<>
+                  <Button size="sm" variant="outline" className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50 gap-1" disabled={busy === w.id} onClick={() => act(w.id, "approved")}><ThumbsUp className="h-3 w-3" /> Approve</Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50 gap-1" disabled={busy === w.id} onClick={() => act(w.id, "rejected")}><ThumbsDown className="h-3 w-3" /> Reject</Button>
+                </>)}
+                {w.status === "approved" && (
+                  <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white gap-1" disabled={busy === w.id} onClick={() => act(w.id, "paid")}><CheckCircle className="h-3 w-3" /> Mark Paid</Button>
+                )}
+                {(w.status === "paid" || w.status === "rejected") && <span className="text-xs text-muted-foreground">—</span>}
+              </div></td>
+            </tr>
+          ))}
+        </tbody>
+      </table></div></CardContent></Card>
     </div>
   )
 }
@@ -414,15 +509,17 @@ export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>("overview")
   const { data: apps } = useAdminApplications()
   const { data: payments } = useAdminPaymentsData()
+  const { data: withdrawals } = useAdminWithdrawals()
 
   const pendingPayments = (payments ?? []).filter((p) => p.status !== "under_review" && p.status !== "approved").length
   const pendingApps = (apps ?? []).filter((a) => a.status === "pending" || a.status === "under_review").length
+  const pendingWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "pending").length
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: "overview", label: "Overview", icon: <BarChart2 className="h-4 w-4" /> },
     { id: "applications", label: "Applications", icon: <FileText className="h-4 w-4" />, badge: pendingApps || undefined },
     { id: "payments", label: "Payments", icon: <CreditCard className="h-4 w-4" />, badge: pendingPayments || undefined },
-    { id: "withdrawals", label: "Withdrawals", icon: <Users className="h-4 w-4" /> },
+    { id: "withdrawals", label: "Withdrawals", icon: <Banknote className="h-4 w-4" />, badge: pendingWithdrawals || undefined },
   ]
 
   return (

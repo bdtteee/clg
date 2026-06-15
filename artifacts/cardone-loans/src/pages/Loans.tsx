@@ -13,7 +13,7 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }
 
 const personalLoanFeatures = [
   "Loan range: $10,000 – $50,000 USD",
-  "Instant 65% pre-qualification on submission",
+  "Instant 85% pre-qualification on submission",
   "No collateral required",
   "Flexible repayment terms (12–60 months)",
   "Decision in 2–3 business days",
@@ -25,7 +25,7 @@ const personalLoanFeatures = [
 
 const businessLoanFeatures = [
   "Loan range: $20,000 – $100,000 USD",
-  "Instant 65% pre-qualification on submission",
+  "Instant 85% pre-qualification on submission",
   "Business and personal use accepted",
   "Flexible repayment terms (12–84 months)",
   "Decision in 2–3 business days",
@@ -54,7 +54,7 @@ const eligibilityBusiness = [
 ]
 
 const faqs = [
-  { q: "What is the 65% pre-qualification?", a: "Upon submission, our automated system immediately issues a binding pre-qualification at 65% of your requested loan amount. For example, a $30,000 application instantly qualifies for $19,500 pending final underwriting. This is confirmed to you before the processing fee processed through M-Pesa is requested." },
+  { q: "What is the 85% pre-qualification?", a: "Upon submission, our automated system immediately issues a binding pre-qualification at 85% of your requested loan amount. For example, a $30,000 application instantly qualifies for $25,500 pending final underwriting. This is confirmed to you before the processing fee processed through M-Pesa is requested." },
   { q: "Are there collateral requirements?", a: "No. Our U.S.-based funding partners do not require Kenyan collateral. Applications are assessed based on your submitted information, income, and business details." },
   { q: "When exactly will funds be disbursed?", a: "Funds are disbursed within 14 calendar days of your application being approved. Disbursement is made in USD directly to your nominated bank account or mobile money account." },
   { q: "Can I apply for more than one loan?", a: "Applicants may not have more than one active loan application at a time. Once a prior loan is fully settled, you may reapply for a new facility." },
@@ -64,7 +64,7 @@ const faqs = [
 export default function Loans() {
   useSEO({
     title: "Personal & Business Loans in Kenya — $10,000 to $100,000 USD | Cardone Loans & Grants",
-    description: "Apply for personal loans ($10,000–$50,000 USD) or business loans ($20,000–$100,000 USD) in Kenya. 65% instant pre-approval. No collateral. Pay via M-Pesa Paybill 4167853. 2–3 day decisions.",
+    description: "Apply for personal loans ($10,000–$50,000 USD) or business loans ($20,000–$100,000 USD) in Kenya. 85% instant pre-approval. No collateral. Pay via M-Pesa Paybill 4167853. 2–3 day decisions.",
     canonical: "/loans",
     keywords: "personal loans Kenya, business loans Kenya, USD loans Kenya, no collateral loan Kenya, M-Pesa loan Kenya, instant loan approval Kenya, US business loan Kenya",
   })
@@ -112,7 +112,7 @@ export default function Loans() {
               { label: "Loan Range", val: "$10K–$100K USD" },
               { label: "Decision Time", val: "2–3 Business Days" },
               { label: "Disbursement", val: "Within 14 Days" },
-              { label: "Pre-approval", val: "65% Guaranteed" },
+              { label: "Pre-approval", val: "85% Guaranteed" },
             ].map((s, i) => (
               <div key={i}>
                 <p className="text-2xl font-display font-bold text-primary mb-1">{s.val}</p>
@@ -154,7 +154,7 @@ export default function Loans() {
                 </CardHeader>
                 <CardContent>
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-bold mb-4">
-                    <TrendingUp className="h-4 w-4" /> 65% Pre-approval Included
+                    <TrendingUp className="h-4 w-4" /> 85% Pre-approval Included
                   </div>
                   <ul className="space-y-3">
                     {personalLoanFeatures.map((f, i) => (
@@ -198,7 +198,7 @@ export default function Loans() {
                 </CardHeader>
                 <CardContent>
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-bold mb-4">
-                    <TrendingUp className="h-4 w-4" /> 65% Pre-approval Included
+                    <TrendingUp className="h-4 w-4" /> 85% Pre-approval Included
                   </div>
                   <ul className="space-y-3">
                     {businessLoanFeatures.map((f, i) => (
@@ -336,7 +336,7 @@ export default function Loans() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
             <h2 className="text-4xl font-display font-bold mb-4">Ready to access U.S. funding?</h2>
-            <p className="text-muted-foreground text-lg mb-8">Register free today. Your 65% pre-qualification is waiting.</p>
+            <p className="text-muted-foreground text-lg mb-8">Register free today. Your 85% pre-qualification is waiting.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
                 <Button size="lg" className="font-bold h-14 px-10">Apply Now — Free <ArrowRight className="ml-2 h-5 w-5" /></Button>
