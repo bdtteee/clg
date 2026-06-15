@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { ensureSchema } from "./lib/ensureSchema.js";
 
 // Prevent unhandled rejections and exceptions from crashing the process
 process.on("unhandledRejection", (reason: unknown) => {
@@ -49,15 +50,26 @@ async function seedAdmin() {
   }
 }
 
+// Auto-apply the schema (idempotent) then seed the admin, on every boot.
+async function init() {
+  try {
+    await ensureSchema();
+  } catch (err) {
+    console.error("Schema ensure error:", err);
+  }
+  await seedAdmin();
+}
+
 const rawPort = process.env["PORT"];
 if (rawPort) {
   const port = Number(rawPort);
   if (!Number.isNaN(port) && port > 0) {
-    seedAdmin();
-    app.listen(port, () => {
-      console.log(`Server listening on port ${port}`);
+    init().finally(() => {
+      app.listen(port, () => {
+        console.log(`Server listening on port ${port}`);
+      });
     });
   }
 } else {
-  seedAdmin();
+  void init();
 }

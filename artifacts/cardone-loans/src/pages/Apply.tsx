@@ -256,6 +256,10 @@ export function Apply() {
   const [payoutSaving, setPayoutSaving] = useState(false)
   const [showPayoutForm, setShowPayoutForm] = useState(false)
 
+  const [stkPhone, setStkPhone] = useState("")
+  const [stkStatus, setStkStatus] = useState<'idle' | 'sending' | 'waiting' | 'failed'>('idle')
+  const [stkMessage, setStkMessage] = useState("")
+
   const setDoc = (key: string, val: UploadedFile | null) =>
     setKycFiles(prev => ({ ...prev, [key]: val }))
 
@@ -447,6 +451,59 @@ export function Apply() {
       onError: (err: any) => setFormError(err?.data?.error || err?.message || "Payment verification failed.")
     })
   }
+
+  const handleStkPush = async () => {
+    if (!createdAppId) return
+    setFormError(""); setStkMessage("")
+    const phone = (stkPhone || appData.phoneNumber || "").trim()
+    if (!phone) { setFormError("Enter your M-Pesa phone number."); return }
+    setStkStatus('sending')
+    try {
+      const res = await fetch(`${BASE}/api/applications/${createdAppId}/stk-push`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: phone }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setStkStatus('failed')
+        setStkMessage(body.error || "Could not start the M-Pesa prompt. Enter your code manually below.")
+        return
+      }
+      setStkStatus('waiting')
+      setStkMessage(body.message || "Check your phone and enter your M-Pesa PIN to authorize the payment.")
+    } catch {
+      setStkStatus('failed')
+      setStkMessage("Could not start the M-Pesa prompt. Enter your code manually below.")
+    }
+  }
+
+  // While an STK push is pending, poll the application until it's marked paid.
+  useEffect(() => {
+    if (stkStatus !== 'waiting' || !createdAppId) return
+    let attempts = 0
+    const interval = setInterval(async () => {
+      attempts++
+      try {
+        const res = await fetch(`${BASE}/api/applications/${createdAppId}`, { credentials: "include" })
+        if (res.ok) {
+          const a = await res.json()
+          if (a.paymentCode || a.status === 'under_review' || a.status === 'approved') {
+            clearInterval(interval)
+            setStkStatus('idle')
+            setStep(6)
+            return
+          }
+        }
+      } catch {}
+      if (attempts >= 24) {
+        clearInterval(interval)
+        setStkStatus('failed')
+        setStkMessage("We haven't received confirmation yet. If you completed the payment it will update shortly — or enter your M-Pesa code below.")
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [stkStatus, createdAppId])
 
   const uploadedCount = Object.values(kycFiles).filter(f => f?.objectPath && !f.uploading).length
   const stepLabels = ["Select", "Details", "Documents", "Payout", "Payment", "Done"]
@@ -733,6 +790,31 @@ export function Apply() {
                   <p className="text-xs text-muted-foreground">~{formatCurrency(productDef.feeUsd)} USD</p>
                   <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-accent/20">Account Name: <strong className="text-foreground">{appData.fullName || "—"}</strong></p>
                 </div>
+
+                {/* Pay instantly with an M-Pesa STK push */}
+                <div className="bg-secondary/5 border border-secondary/20 rounded-xl p-4 mb-6">
+                  <p className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Smartphone className="h-4 w-4 text-secondary" /> Pay instantly with M-Pesa</p>
+                  <p className="text-xs text-muted-foreground mb-3">We'll send a prompt to your phone — enter your M-Pesa PIN to pay KES {productDef.feeKes.toLocaleString()}.</p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input value={stkPhone || appData.phoneNumber || ""} onChange={e => setStkPhone(e.target.value)} placeholder="07XX XXX XXX" className="h-11" disabled={stkStatus === 'waiting'} />
+                    <Button type="button" className="h-11 font-bold shrink-0" onClick={handleStkPush} disabled={stkStatus === 'sending' || stkStatus === 'waiting'}>
+                      {stkStatus === 'sending'
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : stkStatus === 'waiting'
+                          ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Waiting…</span>
+                          : "Pay Now"}
+                    </Button>
+                  </div>
+                  {stkStatus === 'waiting' && <p className="text-xs text-secondary mt-2 flex items-center gap-1">{stkMessage}</p>}
+                  {stkStatus === 'failed' && stkMessage && <p className="text-xs text-amber-600 mt-2">{stkMessage}</p>}
+                </div>
+
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground">or pay manually via Paybill</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
                 <ol className="space-y-3 mb-8 text-muted-foreground text-sm">
                   {[
                     "Go to M-Pesa on your phone",
