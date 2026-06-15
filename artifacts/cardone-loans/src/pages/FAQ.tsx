@@ -21,7 +21,7 @@ const categories = [
     label: "Loans",
     faqs: [
       { q: "What loan amounts are available?", a: "Personal Loans range from $10,000 to $50,000 USD. Business Loans range from $20,000 to $100,000 USD. All amounts are disbursed in USD." },
-      { q: "What is the 65% pre-approval?", a: "For all loan products, our automated system issues a binding pre-qualification equal to 65% of your requested amount immediately upon application submission. This means that if you apply for $20,000, you immediately receive a $13,000 pre-approval — before even paying the processing fee. Final disbursement is subject to the full underwriting review." },
+      { q: "What is the 85% pre-approval?", a: "For all loan and grant products, our automated system issues a binding pre-qualification equal to 85% of your requested amount immediately upon application submission. This means that if you apply for $20,000, you immediately receive a $17,000 pre-approval — before even paying the processing fee. Final disbursement is subject to the full underwriting review." },
       { q: "What interest rates apply?", a: "Interest rates and repayment schedules are determined by your assigned U.S. funding partner and disclosed to you in full upon approval. Rates vary based on loan amount, applicant profile, and market conditions. All terms are communicated in writing before any funds are disbursed." },
       { q: "Is collateral required?", a: "No collateral is required for any of our products. Our U.S.-based funding partners assess applications based on submitted information, income, and business details — not physical Kenyan assets." },
     ],
@@ -48,7 +48,7 @@ const categories = [
     label: "Application Process",
     faqs: [
       { q: "How long does the process take?", a: "From submission to decision: 2–3 business days. From approval to disbursement: up to 14 calendar days. Total process from application to receiving funds: typically 17–20 days." },
-      { q: "What happens after I submit my application?", a: "After submission, you will immediately receive your pre-approval (for loans) and an M-Pesa payment request. Once the fee is verified, your application enters our underwriting queue. You'll receive email and dashboard notifications at every stage." },
+      { q: "What happens after I submit my application?", a: "After submission, you will immediately receive your pre-approval (for loans and grants) and an M-Pesa payment request. Once the fee is verified, your application enters our underwriting queue. You'll receive email and dashboard notifications at every stage." },
       { q: "What documents do I need?", a: "Personal applications: Valid National ID or passport + income information. Business applications: Business registration certificate + KRA PIN certificate + basic financial information. All submitted digitally through your dashboard." },
       { q: "Can I submit multiple applications?", a: "You may only have one active application at a time. Once your application is approved and disbursed — or declined — you may apply again." },
       { q: "What if my application is declined?", a: "You will receive a formal decline notice with the stated reason. The processing fee is not refunded. You may reapply after 90 days. We encourage you to contact our team for guidance on strengthening a future application." },

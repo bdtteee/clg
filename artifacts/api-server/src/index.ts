@@ -16,22 +16,33 @@ process.on("uncaughtException", (err: Error) => {
 export default app;
 
 async function seedAdmin() {
+  // Admin credentials come from the environment — never hardcoded. When they
+  // are not configured, seeding is skipped entirely.
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  const fullName = process.env.ADMIN_NAME?.trim() || "Administrator";
+
+  if (!email || !password) {
+    console.log("ADMIN_EMAIL/ADMIN_PASSWORD not set — skipping admin seed.");
+    return;
+  }
+
   try {
     const [existing] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.email, "info@cardoneloansgrants.com"))
+      .where(eq(usersTable.email, email))
       .limit(1);
 
     if (!existing) {
-      const passwordHash = await bcrypt.hash("Thunes2020!", 12);
+      const passwordHash = await bcrypt.hash(password, 12);
       await db.insert(usersTable).values({
-        email: "info@cardoneloansgrants.com",
+        email,
         passwordHash,
-        fullName: "Cardone Admin",
+        fullName,
         role: "admin",
       });
-      console.log("Admin user seeded successfully");
+      console.log(`Admin user seeded: ${email}`);
     }
   } catch (err) {
     console.error("Admin seed error:", err);

@@ -48,8 +48,8 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const preapprovedAmount =
-      type === "loan" ? (parseFloat(amountRequested) * 0.65).toFixed(2) : null;
+    // Every submitted application receives an instant 85% pre-approval.
+    const preapprovedAmount = (parseFloat(amountRequested) * 0.85).toFixed(2);
 
     const [app] = await db
       .insert(applicationsTable)
@@ -134,10 +134,9 @@ router.patch("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
     } = req.body;
 
     const purposeText = purposeOfFunds || reason;
-    const preapprovedAmount =
-      existing.type === "loan" && amountRequested
-        ? (parseFloat(amountRequested) * 0.65).toFixed(2)
-        : existing.preapprovedAmount;
+    const preapprovedAmount = amountRequested
+      ? (parseFloat(amountRequested) * 0.85).toFixed(2)
+      : existing.preapprovedAmount;
 
     const [app] = await db
       .update(applicationsTable)

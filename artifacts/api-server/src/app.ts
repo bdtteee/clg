@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import session from "express-session";
+import { randomBytes } from "node:crypto";
 import router from "./routes/index.js";
 
 declare module "express-session" {
@@ -13,6 +14,14 @@ declare module "express-session" {
 const app: Express = express();
 
 const isProduction = process.env.NODE_ENV === "production";
+
+// Session signing secret — never hardcoded. Prefer an explicit secret, fall
+// back to the Supabase JWT secret, and finally to an ephemeral random value
+// (auth itself uses the JWT auth_token cookie, so this remains safe).
+const sessionSecret =
+  process.env.SESSION_SECRET ||
+  process.env.SUPABASE_JWT_SECRET ||
+  randomBytes(32).toString("hex");
 
 // Trust the TLS-terminating proxy in front of the app (Vercel / Render).
 // Required so that `secure` cookies are issued and X-Forwarded-Proto is honored.
@@ -70,7 +79,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "cardone-loans-secret-2024",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {

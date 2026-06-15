@@ -41,6 +41,15 @@ services:
       - key: SESSION_SECRET
         generateValue: true
 
+      # ── Admin seed (optional) ─────────────────────────────────────────────────────────
+      # Seeds a single admin user on boot. Leave unset to skip (no hardcoded admin).
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+
       # ── CORS ────────────────────────────────────────────────────────────────────
       # Production frontend origin(s). Comma-separate to allow more than one.
       # *.vercel.app preview deploys are always allowed by the server.

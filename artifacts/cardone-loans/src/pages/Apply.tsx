@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils"
 import {
   Building2, User, ChevronRight, Loader2, CheckCircle2,
   ArrowRight, Zap, Smartphone, AlertCircle, FileText,
-  Upload, X, FileCheck
+  Upload, X, FileCheck, Landmark
 } from "lucide-react"
 
 // Target the API origin configured for split deploys (VITE_API_URL, e.g. the
@@ -250,6 +250,12 @@ export function Apply() {
   const [kycFiles, setKycFiles] = useState<Record<string, UploadedFile | null>>({})
   const [businessPlanFile, setBusinessPlanFile] = useState<UploadedFile | null>(null)
 
+  const [payoutAccounts, setPayoutAccounts] = useState<any[]>([])
+  const [selectedPayoutId, setSelectedPayoutId] = useState<number | null>(null)
+  const [payoutForm, setPayoutForm] = useState({ accountHolderName: "", bankName: "", accountNumber: "", branch: "" })
+  const [payoutSaving, setPayoutSaving] = useState(false)
+  const [showPayoutForm, setShowPayoutForm] = useState(false)
+
   const setDoc = (key: string, val: UploadedFile | null) =>
     setKycFiles(prev => ({ ...prev, [key]: val }))
 
@@ -284,6 +290,27 @@ export function Apply() {
       } catch {}
     })()
   }, [resumeId])
+
+  // Load saved payout accounts when the user reaches the Payout step.
+  useEffect(() => {
+    if (step !== 4) return
+    ;(async () => {
+      try {
+        const res = await fetch(`${BASE}/api/payout-accounts`, { credentials: "include" })
+        if (!res.ok) return
+        const accts = await res.json()
+        setPayoutAccounts(accts)
+        if (accts.length > 0) {
+          const def = accts.find((a: any) => a.isDefault) || accts[0]
+          setSelectedPayoutId(def.id)
+          setShowPayoutForm(false)
+        } else {
+          setShowPayoutForm(true)
+          setPayoutForm(f => ({ ...f, accountHolderName: f.accountHolderName || appData.fullName || "" }))
+        }
+      } catch {}
+    })()
+  }, [step])
 
   const handleProductSelect = (key: ProductKey) => {
     setSelectedProduct(key)
@@ -380,18 +407,49 @@ export function Apply() {
     }
   }
 
+  const handleAddPayout = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormError("")
+    if (!payoutForm.accountHolderName.trim() || !payoutForm.bankName.trim() || !payoutForm.accountNumber.trim()) {
+      setFormError("Account holder name, bank name, and account number are required.")
+      return
+    }
+    setPayoutSaving(true)
+    try {
+      const res = await fetch(`${BASE}/api/payout-accounts`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payoutForm),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setFormError(body.error || "Failed to save bank details. Please try again.")
+        return
+      }
+      const acct = await res.json()
+      setPayoutAccounts(prev => [acct, ...prev])
+      setSelectedPayoutId(acct.id)
+      setShowPayoutForm(false)
+      setPayoutForm({ accountHolderName: "", bankName: "", accountNumber: "", branch: "" })
+    } catch {
+      setFormError("Failed to save bank details. Please try again.")
+    } finally {
+      setPayoutSaving(false)
+    }
+  }
+
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!createdAppId) return
     setFormError("")
     paymentMut.mutate({ id: createdAppId, data: { paymentCode } }, {
-      onSuccess: () => setStep(5),
+      onSuccess: () => setStep(6),
       onError: (err: any) => setFormError(err?.data?.error || err?.message || "Payment verification failed.")
     })
   }
 
   const uploadedCount = Object.values(kycFiles).filter(f => f?.objectPath && !f.uploading).length
-  const stepLabels = ["Select", "Details", "Documents", "Payment", "Done"]
+  const stepLabels = ["Select", "Details", "Documents", "Payout", "Payment", "Done"]
 
   return (
     <div className="min-h-screen bg-background py-16 pt-28">
@@ -424,7 +482,7 @@ export function Apply() {
                 const Icon = prod.icon
                 return (
                   <Card key={key} className="cursor-pointer group hover:border-primary hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 relative overflow-hidden" onClick={() => handleProductSelect(key)}>
-                    {prod.type === 'loan' && (<div className="absolute top-0 right-0 bg-accent text-accent-foreground text-xs font-bold px-3 py-1.5 rounded-bl-xl z-10">65% PRE-APPROVED</div>)}
+                    <div className="absolute top-0 right-0 bg-accent text-accent-foreground text-xs font-bold px-3 py-1.5 rounded-bl-xl z-10">85% PRE-APPROVED</div>
                     <CardHeader>
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors"><Icon className="w-6 h-6" /></div>
@@ -588,7 +646,7 @@ export function Apply() {
                 <div className="flex gap-3 pt-2 border-t border-border">
                   <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(2)}>← Back</Button>
                   <Button type="submit" size="lg" className="flex-1 h-12 font-bold" disabled={kycSaving || Object.values(kycFiles).some(f => f?.uploading)}>
-                    {kycSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <>{uploadedCount > 0 ? `Save ${uploadedCount} Document${uploadedCount > 1 ? 's' : ''} & Continue` : 'Continue to Payment'}<ChevronRight className="ml-2 h-5 w-5" /></>}
+                    {kycSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <>{uploadedCount > 0 ? `Save ${uploadedCount} Document${uploadedCount > 1 ? 's' : ''} & Continue` : 'Continue to Bank Details'}<ChevronRight className="ml-2 h-5 w-5" /></>}
                   </Button>
                 </div>
                 <p className="text-xs text-center text-muted-foreground">Missing documents can be submitted later from your dashboard. Incomplete documents may delay processing.</p>
@@ -597,8 +655,71 @@ export function Apply() {
           </Card>
         )}
 
-        {/* STEP 4 */}
+        {/* STEP 4 — Payout / Bank details */}
         {step === 4 && productDef && createdAppId && (
+          <Card className="animate-in fade-in slide-in-from-right-8 duration-500 shadow-xl shadow-primary/5">
+            <CardHeader className="border-b border-border bg-muted/30">
+              <CardTitle className="text-2xl flex items-center gap-2"><Landmark className="h-6 w-6 text-primary" /> Payout / Bank Details</CardTitle>
+              <CardDescription>Add the bank account where your approved funds will be disbursed. You can request withdrawals to this account from your dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-8">
+              {formError && (<div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm flex items-center gap-2 border border-destructive/20 mb-6"><AlertCircle className="h-4 w-4 shrink-0" />{formError}</div>)}
+
+              {payoutAccounts.length > 0 && (
+                <div className="space-y-3 mb-6">
+                  <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Select a payout account</h3>
+                  {payoutAccounts.map((acct: any) => (
+                    <button
+                      type="button"
+                      key={acct.id}
+                      onClick={() => setSelectedPayoutId(acct.id)}
+                      className={`w-full text-left rounded-xl border-2 p-4 transition-all ${selectedPayoutId === acct.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-sm">{acct.bankName}</p>
+                          <p className="text-sm text-muted-foreground">{acct.accountHolderName} · ****{String(acct.accountNumber).slice(-4)}</p>
+                        </div>
+                        {selectedPayoutId === acct.id && <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />}
+                      </div>
+                    </button>
+                  ))}
+                  {!showPayoutForm && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => { setShowPayoutForm(true); setPayoutForm(f => ({ ...f, accountHolderName: f.accountHolderName || appData.fullName || "" })) }}>
+                      + Add another account
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {showPayoutForm && (
+                <form onSubmit={handleAddPayout} className="space-y-5 p-5 rounded-xl border border-dashed border-border bg-muted/20">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5"><label className="text-sm font-semibold">Account Holder Name</label><Input required value={payoutForm.accountHolderName} onChange={e => setPayoutForm(f => ({ ...f, accountHolderName: e.target.value }))} placeholder="As on your bank account" /></div>
+                    <div className="space-y-1.5"><label className="text-sm font-semibold">Bank Name</label><Input required value={payoutForm.bankName} onChange={e => setPayoutForm(f => ({ ...f, bankName: e.target.value }))} placeholder="e.g. KCB, Equity, Co-operative" /></div>
+                    <div className="space-y-1.5"><label className="text-sm font-semibold">Account Number</label><Input required value={payoutForm.accountNumber} onChange={e => setPayoutForm(f => ({ ...f, accountNumber: e.target.value }))} placeholder="Your bank account number" /></div>
+                    <div className="space-y-1.5"><label className="text-sm font-semibold">Branch <span className="text-muted-foreground font-normal">(Optional)</span></label><Input value={payoutForm.branch} onChange={e => setPayoutForm(f => ({ ...f, branch: e.target.value }))} placeholder="e.g. Nairobi CBD" /></div>
+                  </div>
+                  <div className="flex gap-3">
+                    {payoutAccounts.length > 0 && (<Button type="button" variant="ghost" onClick={() => { setShowPayoutForm(false); setFormError("") }}>Cancel</Button>)}
+                    <Button type="submit" disabled={payoutSaving}>{payoutSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Bank Account"}</Button>
+                  </div>
+                </form>
+              )}
+
+              <div className="flex gap-3 pt-6 border-t border-border mt-6">
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(3)}>← Back</Button>
+                <Button type="button" size="lg" className="flex-1 h-12 font-bold" disabled={!selectedPayoutId} onClick={() => { setFormError(""); setStep(5) }}>
+                  Continue to Payment <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+              {!selectedPayoutId && <p className="text-xs text-center text-muted-foreground mt-3">Add and select a bank account to continue.</p>}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* STEP 5 — Payment */}
+        {step === 5 && productDef && createdAppId && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 animate-in fade-in slide-in-from-right-8 duration-500">
             <Card className="md:col-span-3 border-primary/20 shadow-xl shadow-primary/5">
               <CardHeader className="bg-primary text-primary-foreground rounded-t-xl">
@@ -610,6 +731,7 @@ export function Apply() {
                   <p className="text-sm font-semibold text-accent-foreground mb-1">Processing Fee Due</p>
                   <p className="text-2xl font-bold text-primary">KES {productDef.feeKes.toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">~{formatCurrency(productDef.feeUsd)} USD</p>
+                  <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-accent/20">Account Name: <strong className="text-foreground">{appData.fullName || "—"}</strong></p>
                 </div>
                 <ol className="space-y-3 mb-8 text-muted-foreground text-sm">
                   {[
@@ -649,6 +771,7 @@ export function Apply() {
                     { label: "Amount (USD)", value: formatCurrency(appData.amountRequested) },
                     { label: "Country", value: "🇺🇦 Africa" },
                     { label: "Reference", value: `APP-${createdAppId}` },
+                    { label: "Account Name", value: appData.fullName || "—" },
                     { label: "Documents", value: `${uploadedCount} uploaded` },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between border-b border-border pb-2 last:border-0 last:pb-0">
@@ -665,34 +788,30 @@ export function Apply() {
                   </div>
                 </CardContent>
               </Card>
-              {productDef.type === 'loan' && (
-                <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 text-sm">
-                  <strong className="text-accent-foreground block mb-2 flex items-center gap-1"><Zap className="h-4 w-4" /> Instant Pre-Approval</strong>
-                  <p className="text-muted-foreground">After payment you'll receive a <strong>65% pre-approval</strong> for{" "}<strong className="text-primary">{formatCurrency(Number(appData.amountRequested) * 0.65)} USD</strong>.</p>
-                </div>
-              )}
+              <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 text-sm">
+                <strong className="text-accent-foreground block mb-2 flex items-center gap-1"><Zap className="h-4 w-4" /> Instant Pre-Approval</strong>
+                <p className="text-muted-foreground">After payment you'll receive an <strong>85% pre-approval</strong> for{" "}<strong className="text-primary">{formatCurrency(Number(appData.amountRequested) * 0.85)} USD</strong>.</p>
+              </div>
             </div>
           </div>
         )}
 
-        {/* STEP 5 */}
-        {step === 5 && productDef && (
+        {/* STEP 6 — Done */}
+        {step === 6 && productDef && (
           <div className="animate-in zoom-in-95 duration-700 max-w-2xl mx-auto text-center mt-8">
             <div className="w-24 h-24 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-8">
               <CheckCircle2 className="w-12 h-12 text-secondary" />
             </div>
             <h1 className="text-4xl font-display font-bold mb-4">Application Submitted!</h1>
             <p className="text-lg text-muted-foreground mb-8">Reference: <strong className="text-primary font-mono">APP-{createdAppId}</strong>. Your M-Pesa payment has been received and your application is now under review.</p>
-            {productDef.type === 'loan' && (
-              <Card className="border-accent bg-accent/5 shadow-xl mb-8 overflow-hidden relative text-left">
-                <div className="absolute top-0 left-0 w-2 h-full bg-accent" />
-                <CardContent className="p-8">
-                  <p className="text-accent-foreground font-bold text-xs uppercase tracking-widest mb-2">Instant Pre-Approval Decision</p>
-                  <div className="text-4xl font-display font-extrabold text-primary mb-3">{formatCurrency(Number(appData.amountRequested) * 0.65)} USD</div>
-                  <p className="text-muted-foreground">You are <strong>65% pre-approved</strong> based on automated criteria. Final approval pending full review.</p>
-                </CardContent>
-              </Card>
-            )}
+            <Card className="border-accent bg-accent/5 shadow-xl mb-8 overflow-hidden relative text-left">
+              <div className="absolute top-0 left-0 w-2 h-full bg-accent" />
+              <CardContent className="p-8">
+                <p className="text-accent-foreground font-bold text-xs uppercase tracking-widest mb-2">Instant Pre-Approval Decision</p>
+                <div className="text-4xl font-display font-extrabold text-primary mb-3">{formatCurrency(Number(appData.amountRequested) * 0.85)} USD</div>
+                <p className="text-muted-foreground">You are <strong>85% pre-approved</strong> based on automated criteria. Final approval pending full review.</p>
+              </CardContent>
+            </Card>
             <div className="bg-muted p-6 rounded-2xl mb-8 text-left">
               <h4 className="font-bold mb-4">What happens next?</h4>
               <ul className="space-y-4">

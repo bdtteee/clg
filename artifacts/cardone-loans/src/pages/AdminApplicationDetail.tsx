@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRoute, Link, useLocation } from "wouter"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
@@ -19,8 +19,7 @@ import {
   FileText, ExternalLink, Clock, Upload, ThumbsUp, ThumbsDown
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
+import { apiUrl, objectViewUrl } from "@/lib/api"
 
 function DocStatusBadge({ status }: { status: string }) {
   switch (status) {
@@ -39,7 +38,7 @@ function useAdminKycDocuments(appId: number) {
   return useQuery({
     queryKey: ["admin-kyc-documents", appId],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/admin/applications/${appId}/kyc-documents`, { credentials: "include" })
+      const res = await fetch(apiUrl(`/api/admin/applications/${appId}/kyc-documents`), { credentials: "include" })
       if (!res.ok) return []
       return res.json()
     },
@@ -71,16 +70,18 @@ export function AdminApplicationDetail() {
     query: {
       queryKey: getGetApplicationQueryKey(id),
       enabled: !!id,
-      onSuccess: (data: any) => {
-        setEditFields({
-          assignedPartner: data.assignedPartner || "",
-          approvedAmount: data.approvedAmount ? String(data.approvedAmount) : "",
-          disbursementDate: data.disbursementDate || "",
-          adminComment: data.adminComment || "",
-        })
-      },
     }
   })
+
+  useEffect(() => {
+    if (!app) return
+    setEditFields({
+      assignedPartner: app.assignedPartner || "",
+      approvedAmount: app.approvedAmount ? String(app.approvedAmount) : "",
+      disbursementDate: app.disbursementDate || "",
+      adminComment: app.adminComment || "",
+    })
+  }, [app])
 
   const { data: kycDocs = [], refetch: refetchDocs } = useAdminKycDocuments(id)
 
@@ -129,7 +130,7 @@ export function AdminApplicationDetail() {
   const handleDocUpdate = async (docId: number, status: string, rejectionReason?: string) => {
     setSavingDoc(docId)
     try {
-      const res = await fetch(`${BASE}/api/admin/kyc-documents/${docId}`, {
+      const res = await fetch(apiUrl(`/api/admin/kyc-documents/${docId}`), {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -310,17 +311,15 @@ export function AdminApplicationDetail() {
             </CardContent>
           </Card>
 
-          {app.type === 'loan' && (
-            <Card className="border-accent">
-              <CardContent className="p-6">
-                <p className="text-sm font-bold text-accent-foreground uppercase tracking-wider mb-2">System Calculation</p>
-                <p className="text-muted-foreground text-sm mb-4">65% pre-approval shown to user.</p>
-                <div className="text-3xl font-display font-black text-primary">
-                  {formatCurrency(app.amountRequested * 0.65)}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="border-accent">
+            <CardContent className="p-6">
+              <p className="text-sm font-bold text-accent-foreground uppercase tracking-wider mb-2">System Calculation</p>
+              <p className="text-muted-foreground text-sm mb-4">85% pre-approval shown to user.</p>
+              <div className="text-3xl font-display font-black text-primary">
+                {formatCurrency(app.preapprovedAmount ?? app.amountRequested * 0.85)}
+              </div>
+            </CardContent>
+          </Card>
 
           {app.adminComment && (
             <Card className="border-border">
@@ -370,7 +369,7 @@ export function AdminApplicationDetail() {
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         {doc.fileUrl && (
-                          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
+                          <a href={objectViewUrl(doc.fileUrl)} target="_blank" rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline border border-primary/30 rounded-lg px-3 py-1.5">
                             <ExternalLink className="h-3 w-3" /> View Document
                           </a>

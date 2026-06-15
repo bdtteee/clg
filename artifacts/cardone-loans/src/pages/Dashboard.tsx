@@ -1,12 +1,16 @@
+import { useState } from "react"
 import { useGetApplications, useGetNotifications, useMarkNotificationRead, useLogout, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
+import { apiUrl } from "@/lib/api"
 import { formatCurrency } from "@/lib/utils"
 import { Link, useLocation } from "wouter"
 import { format } from "date-fns"
-import { Bell, FileText, PlusCircle, ArrowRight, Loader2, Info, AlertCircle, PlayCircle, LogOut } from "lucide-react"
-import { useQueryClient } from "@tanstack/react-query"
+import { Bell, FileText, PlusCircle, ArrowRight, Loader2, Info, AlertCircle, PlayCircle, LogOut, Wallet, Banknote } from "lucide-react"
+import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { getGetNotificationsQueryKey } from "@workspace/api-client-react"
 
 function StatusBadge({ status, paymentCode }: { status: string; paymentCode?: string | null }) {
@@ -19,6 +23,184 @@ function StatusBadge({ status, paymentCode }: { status: string; paymentCode?: st
     case 'under_review': return <Badge variant="secondary">Under Review</Badge>
     default: return <Badge variant="warning">Pending</Badge>
   }
+}
+
+function WithdrawStatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case 'approved': return <Badge variant="secondary">Approved</Badge>
+    case 'paid': return <Badge variant="success">Paid</Badge>
+    case 'rejected': return <Badge variant="destructive">Rejected</Badge>
+    default: return <Badge variant="warning">Pending</Badge>
+  }
+}
+
+function WithdrawalsPanel({ apps }: { apps: any[] }) {
+  const { toast } = useToast()
+
+  const { data: accounts = [], refetch: refetchAccounts } = useQuery<any[]>({
+    queryKey: ["payout-accounts"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/api/payout-accounts"), { credentials: "include" })
+      if (!res.ok) return []
+      return res.json()
+    },
+  })
+  const { data: withdrawals = [], refetch: refetchWithdrawals } = useQuery<any[]>({
+    queryKey: ["withdrawals"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/api/withdrawals"), { credentials: "include" })
+      if (!res.ok) return []
+      return res.json()
+    },
+  })
+
+  const [showAdd, setShowAdd] = useState(false)
+  const [acct, setAcct] = useState({ accountHolderName: "", bankName: "", accountNumber: "", branch: "" })
+  const [savingAcct, setSavingAcct] = useState(false)
+
+  const [amount, setAmount] = useState("")
+  const [accountId, setAccountId] = useState("")
+  const [appId, setAppId] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState("")
+
+  const eligibleApps = apps.filter(a => a.status !== 'rejected' && a.paymentCode)
+  const available = eligibleApps.reduce((sum, a) => sum + (a.preapprovedAmount ?? a.amountRequested * 0.85), 0)
+
+  const addAccount = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    if (!acct.accountHolderName.trim() || !acct.bankName.trim() || !acct.accountNumber.trim()) {
+      setError("Account holder name, bank name, and account number are required."); return
+    }
+    setSavingAcct(true)
+    try {
+      const res = await fetch(apiUrl("/api/payout-accounts"), {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(acct),
+      })
+      if (!res.ok) { const b = await res.json().catch(() => ({})); setError(b.error || "Failed to add account"); return }
+      setAcct({ accountHolderName: "", bankName: "", accountNumber: "", branch: "" })
+      setShowAdd(false)
+      refetchAccounts()
+      toast({ title: "Bank account added" })
+    } catch { setError("Failed to add account") }
+    finally { setSavingAcct(false) }
+  }
+
+  const submitWithdrawal = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    if (!accountId) { setError("Select a payout account."); return }
+    const amt = Number(amount)
+    if (!amt || amt <= 0) { setError("Enter a valid amount."); return }
+    setSubmitting(true)
+    try {
+      const res = await fetch(apiUrl("/api/withdrawals"), {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: amt, payoutAccountId: Number(accountId), applicationId: appId || null }),
+      })
+      if (!res.ok) { const b = await res.json().catch(() => ({})); setError(b.error || "Failed to submit withdrawal"); return }
+      setAmount(""); setAppId("")
+      refetchWithdrawals()
+      toast({ title: "Withdrawal request submitted" })
+    } catch { setError("Failed to submit withdrawal") }
+    finally { setSubmitting(false) }
+  }
+
+  return (
+    <Card id="withdrawals" className="mt-8">
+      <CardHeader className="border-b border-border">
+        <CardTitle className="flex items-center gap-2"><Wallet className="h-5 w-5 text-primary" /> Payouts &amp; Withdrawals</CardTitle>
+      </CardHeader>
+      <CardContent className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Payout Accounts</h3>
+              {!showAdd && <Button size="sm" variant="outline" onClick={() => { setShowAdd(true); setError("") }}>+ Add bank account</Button>}
+            </div>
+            {accounts.length === 0 && !showAdd && (
+              <p className="text-sm text-muted-foreground">No payout accounts yet. Add a bank account to request a withdrawal.</p>
+            )}
+            <div className="space-y-2">
+              {accounts.map((a: any) => (
+                <div key={a.id} className="rounded-lg border border-border p-3 text-sm">
+                  <p className="font-semibold">{a.bankName}</p>
+                  <p className="text-muted-foreground">{a.accountHolderName} · ****{String(a.accountNumber).slice(-4)}{a.branch ? ` · ${a.branch}` : ""}</p>
+                </div>
+              ))}
+            </div>
+            {showAdd && (
+              <form onSubmit={addAccount} className="mt-3 space-y-3 p-4 rounded-xl border border-dashed border-border bg-muted/20">
+                <Input required placeholder="Account holder name" value={acct.accountHolderName} onChange={e => setAcct(s => ({ ...s, accountHolderName: e.target.value }))} />
+                <Input required placeholder="Bank name" value={acct.bankName} onChange={e => setAcct(s => ({ ...s, bankName: e.target.value }))} />
+                <Input required placeholder="Account number" value={acct.accountNumber} onChange={e => setAcct(s => ({ ...s, accountNumber: e.target.value }))} />
+                <Input placeholder="Branch (optional)" value={acct.branch} onChange={e => setAcct(s => ({ ...s, branch: e.target.value }))} />
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setShowAdd(false); setError("") }}>Cancel</Button>
+                  <Button type="submit" size="sm" disabled={savingAcct}>{savingAcct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}</Button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          <form onSubmit={submitWithdrawal} className="space-y-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Request a Withdrawal</h3>
+            <p className="text-xs text-muted-foreground">Available pre-approved balance: <strong className="text-primary">{formatCurrency(available)}</strong></p>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Amount (USD)</label>
+              <Input type="number" min={1} value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 5000" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Payout account</label>
+              <select className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm" value={accountId} onChange={e => setAccountId(e.target.value)}>
+                <option value="">Select account…</option>
+                {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.bankName} · ****{String(a.accountNumber).slice(-4)}</option>)}
+              </select>
+            </div>
+            {eligibleApps.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">For application (optional)</label>
+                <select className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm" value={appId} onChange={e => setAppId(e.target.value)}>
+                  <option value="">— None —</option>
+                  {eligibleApps.map((a: any) => <option key={a.id} value={a.id}>APP-{a.id} · {a.category} {a.type}</option>)}
+                </select>
+              </div>
+            )}
+            {error && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{error}</p>}
+            <Button type="submit" className="w-full" disabled={submitting || accounts.length === 0}>
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Banknote className="h-4 w-4 mr-2" /> Submit Withdrawal Request</>}
+            </Button>
+            {accounts.length === 0 && <p className="text-xs text-muted-foreground text-center">Add a payout account first.</p>}
+          </form>
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">Withdrawal Requests</h3>
+          {withdrawals.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No withdrawal requests yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {withdrawals.map((w: any) => (
+                <div key={w.id} className="rounded-xl border border-border p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold">{w.currency} {Number(w.amount).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{w.payoutAccount ? `${w.payoutAccount.bankName} · ****${String(w.payoutAccount.accountNumber).slice(-4)}` : "—"}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(w.createdAt), 'MMM d, yyyy')}</p>
+                    {w.adminComment && <p className="text-xs text-muted-foreground mt-1 italic">{w.adminComment}</p>}
+                  </div>
+                  <WithdrawStatusBadge status={w.status} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function UserDashboard() {
@@ -62,6 +244,9 @@ export function UserDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => document.getElementById("withdrawals")?.scrollIntoView({ behavior: "smooth" })}>
+            <Wallet className="mr-2 h-4 w-4" /> Withdraw
+          </Button>
           <Link href="/apply">
             <Button variant="accent">
               <PlusCircle className="mr-2 h-4 w-4" /> New Application
@@ -122,10 +307,10 @@ export function UserDashboard() {
                         </span>
                       </div>
                     )}
-                    {!isIncomplete && app.type === 'loan' && app.status !== 'rejected' && (
+                    {!isIncomplete && app.status !== 'rejected' && (
                       <div className="bg-accent/10 px-6 py-2 border-b border-accent/20 flex justify-between items-center">
                         <span className="text-xs font-bold text-accent-foreground tracking-wider uppercase">Pre-approval Status Active</span>
-                        <span className="text-sm font-bold text-primary">{formatCurrency(app.amountRequested * 0.65)} Guarantee</span>
+                        <span className="text-sm font-bold text-primary">{formatCurrency(app.preapprovedAmount ?? app.amountRequested * 0.85)} Guarantee</span>
                       </div>
                     )}
                     <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -215,6 +400,8 @@ export function UserDashboard() {
           </Card>
         </div>
       </div>
+
+      <WithdrawalsPanel apps={apps || []} />
     </div>
   )
 }
